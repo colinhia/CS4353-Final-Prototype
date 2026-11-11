@@ -28,9 +28,10 @@ export type ReviewCardData = {
   author?: Person;
 };
 
-// Where each star sticker sits in its little cluster (x, y in px) and its tilt.
-const STAR_SPOTS: [number, number, number][] = [[0, 15, -12], [12, 3, 8], [24, 13, -4], [36, 1, 14], [45, 16, -9]];
-const STAR_PATH = 'M12 2.6l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z';
+// Where each leaf sticker sits in its little cluster (x, y in px) and its tilt.
+const LEAF_SPOTS: [number, number, number][] = [[0, 15, -12], [12, 3, 8], [24, 13, -4], [36, 1, 14], [45, 16, -9]];
+// FontAwesome 6 "leaf" icon (512x512 viewBox).
+const LEAF_PATH = 'M471.3 6.7C477.7 .6 487-1.6 495.6 1.2 505.4 4.5 512 13.7 512 24l0 186.9c0 131.2-108.1 237.1-238.8 237.1-77 0-143.4-49.5-167.5-118.7-35.4 30.8-57.7 76.1-57.7 126.7 0 13.3-10.7 24-24 24S0 469.3 0 456C0 381.1 38.2 315.1 96.1 276.3 131.4 252.7 173.5 240 216 240l80 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-80 0c-39.7 0-77.3 8.8-111 24.5 23.3-70 89.2-120.5 167-120.5 66.4 0 115.8-22.1 148.7-44 19.2-12.8 35.5-28.1 50.7-45.3z';
 const TILTS = [-1.2, 0.9, -0.5, 1.3, -0.8, 0.4];
 
 
@@ -39,7 +40,7 @@ export function ReviewCard({ review, index = 0, showAuthor = false }: { review: 
   const stars = Math.max(0, Math.min(5, Math.round(review.rating)));
   const compliments = review.compliments.slice(0, 3);
   const author = showAuthor && review.author ? review.author : null;
-  const label = `${author ? `Review by ${author.name}` : 'Review'}, ${stars} out of 5 stars${compliments.length ? `, compliments: ${compliments.join(', ')}` : ''}`;
+  const label = `${author ? `Review by ${author.name}` : 'Review'}, ${stars} out of 5 leaves${compliments.length ? `, compliments: ${compliments.join(', ')}` : ''}`;
 
   return <article className={`polaroid${review.photo ? ' polaroid--photo' : ''}`} aria-label={label}
     style={{ '--tilt': `${TILTS[index % TILTS.length]}deg` } as CSSProperties}>
@@ -51,9 +52,9 @@ export function ReviewCard({ review, index = 0, showAuthor = false }: { review: 
       <span className="author-sticker"><UserChip person={author} size={22} /></span>
     </div>}
     <div className="polaroid__stickers">
-      <span className="star-stickers" aria-hidden="true" style={{ width: stars ? STAR_SPOTS[stars - 1][0] + 22 : 0 }}>
-        {STAR_SPOTS.slice(0, stars).map(([x, y, r], i) => <svg key={i} className="star-sticker" viewBox="0 0 24 24" style={{ left: x, top: y, rotate: `${r}deg` }}>
-          <path d={STAR_PATH} />
+      <span className="star-stickers" aria-hidden="true" style={{ width: stars ? LEAF_SPOTS[stars - 1][0] + 22 : 0 }}>
+        {LEAF_SPOTS.slice(0, stars).map(([x, y, r], i) => <svg key={i} className="star-sticker" viewBox="0 0 512 512" style={{ left: x, top: y, rotate: `${r}deg` }}>
+          <path d={LEAF_PATH} />
         </svg>)}
       </span>
       <span className="compliment-stickers" aria-hidden="true">
@@ -74,7 +75,7 @@ function ReviewDetails({ review, author, onClose }: { review: ReviewCardData; au
       {author && <div className="polaroid__author">
         <span className="author-sticker"><UserChip person={author} size={22} /></span>
       </div>}
-      <StarRow value={stars} size={26} label={`${stars} out of 5 stars`} />
+      <StarRow value={stars} size={26} label={`${stars} out of 5 leaves`} />
     </div>
     {review.compliments.length > 0 && <ul className="compliment-tiles" aria-label="Compliments">
       {review.compliments.map(c => <li key={c}><ComplimentTile name={c} selected /></li>)}
@@ -88,8 +89,8 @@ export function StarRow({ value, size = 22, label }: { value: number; size?: num
   </span>;
 }
 export function StarSticker({ on, size = 22 }: { on: boolean; size?: number }) {
-  return <svg className={`star-sticker star-sticker--inline${on ? '' : ' star-sticker--off'}`} viewBox="0 0 24 24" width={size} height={size} style={{ width: size, height: size }} aria-hidden="true">
-    <path d={STAR_PATH} />
+  return <svg className={`star-sticker star-sticker--inline${on ? '' : ' star-sticker--off'}`} viewBox="0 0 512 512" width={size} height={size} style={{ width: size, height: size }} aria-hidden="true">
+    <path d={LEAF_PATH} />
   </svg>;
 }
 
@@ -113,7 +114,7 @@ function ComplimentSticker({ name, index }: { name: string; index: number }) {
 export function ReviewSummary({ review }: { review: { rating: number; text: string; compliments: string[]; photo?: string } }) {
   const stars = Math.max(0, Math.min(5, Math.round(review.rating)));
   return <div className="review-summary">
-    <StarRow value={stars} size={24} label={`${stars} out of 5 stars`} />
+    <StarRow value={stars} size={24} label={`${stars} out of 5 leaves`} />
     <p className="review-summary__text">{review.text}</p>
     {review.compliments.length > 0 && <ul className="compliment-tiles compliment-tiles--small" aria-label="Compliments">
       {review.compliments.map(c => <li key={c}><ComplimentTile name={c} selected /></li>)}

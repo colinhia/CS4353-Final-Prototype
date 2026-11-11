@@ -49,12 +49,12 @@ export function ReviewSheet({loanId,onClose}:{loanId:string;onClose:()=>void}) {
                         <label key={value}>
                             <input className="sr-only" type="radio" name="rating" value={value} checked={rating===value} onChange={()=>setRating(value)}/>
                             <StarSticker on={value<=rating} size={50}/>
-                            <span className="sr-only">{value} {value===1?'star':'stars'}</span>
+                            <span className="sr-only">{value} {value===1?'leaf':'leaves'}</span>
                         </label>)
                         }
                     </div>
                 </fieldset>
-                <label>Your review
+                <label>Share your story
                     <textarea value={text} onChange={e=>setText(e.target.value)} maxLength={2000} required placeholder="What went well?"/>
                 </label>
                 <fieldset className="rating-group">

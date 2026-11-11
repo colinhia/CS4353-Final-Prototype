@@ -66,7 +66,7 @@
 }
 .author-sticker .user-chip { gap: 5px; font-size: 12px; }
 
-/* Star rating as a cluster of stickers*/
+/* Leaf rating as a cluster of stickers*/
 .polaroid__stickers { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; min-height: 36px; }
 .star-stickers { position: relative; height: 36px; }
 .star-sticker {
@@ -77,9 +77,9 @@
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 25%));
 }
 .star-sticker path {
-  fill: #ffc93c;
+  fill: #6fbe6f;
   stroke: #fff;
-  stroke-width: 3;
+  stroke-width: 64;
   stroke-linejoin: round;
   paint-order: stroke;
 }
@@ -113,7 +113,7 @@
 .review-details .polaroid--large { min-height: 0; padding: 12px 12px 14px; rotate: 0deg; }
 .polaroid--large .polaroid__text { display: block; margin-bottom: 12px; font-size: 16px; -webkit-line-clamp: unset; }
 
-/* Star stickers in a straight row (review form and expanded review)*/
+/* Leaf stickers in a straight row (review form and expanded review)*/
 .star-row { display: inline-flex; gap: 4px; }
 .star-sticker--inline { position: static; flex: none; }
 .star-sticker--off { filter: none; }

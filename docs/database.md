@@ -50,7 +50,7 @@ To repeat the current SQL suites on a disposable, migrated local Supabase stack:
 
 ```sh
 supabase db query --file supabase/tests/shared_demo.sql
-supabase db query --file supabase/tests/feature_frame.sql
+supabase db query --file supabase/tests/demo_sprite.sql
 ```
 
 Use `--remote` only for an explicitly selected managed project. Both scripts create
@@ -201,13 +201,12 @@ has versions `20261030000100`, `20261030000200`, `20261030000300` recorded; do n
 reapply them. `20261030000300_feature_frame.sql` was rehearsed with rollback tests,
 then deployed on 30 October 2026 with its exact source recorded in migration history.
 
-Run **`supabase/tests/feature_frame.sql`** as postgres in a development database.
-It rolls back all synthetic users, rows and Storage metadata. It covers access
-policies, reservations, approval/revision checks, all four scan/photo transitions,
-final checklist/review gates, safe public reviews and chat retry/privacy rules.
-A separate live HTTP check verified real demo sign-ins, friend acceptance, item
-creation, reservations/overlap rejection, all four scans with real Storage uploads,
-review create/edit/delete, chat messages/image uploads, Realtime and outsider privacy.
+The legacy root-app suite **`supabase/tests/feature_frame.sql`** (and
+`review_card.sql`) was removed with the legacy Storage buckets in migration
+`20261112000100_drop_legacy_storage.sql`, because both exercised the dropped
+`loan-verification`/`chat-images` buckets. The root-app schema documented above is
+retired as part of that cleanup (see `docs/supabase-cleanup.md`); the live demo is
+covered by `shared_demo.sql` and `demo_sprite.sql`.
 Live checks create temporary `[smoke]` rows; an administrator can remove these
 after reviewing the results. Uploaded test files are removed by the test workflow.
 Frontend unit/component tests and `pnpm build` provide local checks without hosted

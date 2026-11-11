@@ -57,54 +57,74 @@ supabase db query --file supabase/tests/shared_demo.sql
 | `public.save_review_v2` | Created by 20261107000300. No client calls it: the root app calls `save_review` (v1, deliberately kept per that migration's comments) and the live demo saves reviews through `demo_command`. Only `supabase/tests/review_card.sql` exercises it. Drop it, or point the root app's review form at it, but don't keep both silently. |
 | `private.palette_colour_for(uuid)` | Used only by root-app machinery: the 000200 sprite trigger, the 0007000200 backfill, and `public.sprites` colour typing. If the root app is retired (Tier 3), this goes with it. |
 
-## Tier 3 — the whole legacy block: drop only if you retire the root app
+## Tier 3 — retire the whole legacy block (root app not needed)
 
-Everything below is used **exclusively** by the undeployed root app in `src/`. If the
-team agrees the root app is over (its README already points users to `frontend/`), one
-new migration can remove the entire model:
+Everything below is used **exclusively** by the root app in `src/`, which is not
+deployed. Verified against the **live hosted project** (`ejgvfgvrmcwrixxdvwwt`,
+read-only) on 2026-11-11: every legacy table is empty **except** `public.profiles`
+(8 rows, all root-app: each owns one `user`-category sprite), `public.sprites`
+(8 rows), and `public.lockers` (10 rows, `location1`–`location10`, root-app seed).
+All five legacy storage buckets hold **0 objects**; only `demo-images` has data (28).
+The demo's locker options are hardcoded strings (`clementi`, `toa-payoh`,
+`kent-ridge`) validated inside `demo_command_base` — it never reads `public.lockers`.
+`item_catalog`/`loan_catalog` have no external dependents.
 
-- **Tables:** `public.profiles`, `public.sprites`, `public.items`,
-  `public.item_images`, `public.item_lockers`, `public.loans`, `public.lockers`,
-  `public.chats`, `public.messages`, `public.reviews`, `public.friendships`,
-  `private.handoff_challenges`, `private.prototype_config`
-- **Views:** `public.item_catalog`, `public.loan_catalog`
-- **Public RPCs:** `create_loan`, `create_item`, `approve_loan`, `cancel_loan`,
-  `modify_loan`, `set_item_lockers`, `get_handoff_qr`, `simulate_locker_scan`,
-  `record_handoff_photo`, `send_message`, `get_chat_summaries`, `get_reviews`,
-  `save_review`, `delete_review`, plus `save_review_v2` if Tier 2 says so
-- **Private helpers** (only reachable via the above): `assign_sprite`,
-  `remove_sprite`, `create_profile`, `can_view_owner`, `chat_member`, `is_friend`,
-  `item_compliments`, `item_on_loan`, `item_status`, `loan_owner`, `next_scan`,
-  `pending_photo`, `step_actor`, `review_image_visible`, `can_upload_verification`,
-  `palette_colour_for`
-- **Triggers** (drop in dependency order): sprite triggers on `items`/`profiles`
-  (`items_assign_sprite`, `items_remove_sprite`, `profiles_assign_sprite`,
-  `profiles_remove_sprite`), then `on_auth_user_created` on `auth.users` — ⚠️ this
-  trigger inserts a row into `public.profiles` for **every** auth user, including the
-  demo accounts. Dropping it is fine only together with `public.profiles`; the demo
-  itself does not need it (`demo_profiles` is provisioned separately by
-  `frontend/scripts/provision-demo.ts`).
-- **Storage:** the `loan-verification` bucket and its policies on `storage.objects`
-  (`loan-verification_insert`/`loan-verification_read`/`unused_proof_delete`), which
-  reference `private.can_upload_verification`. Keep the `demo-images` bucket — the live
-  demo uses it.
-- **Tests/docs to update:** `supabase/tests/feature_frame.sql`, `sprite_face.sql`,
-  `sprite_palette.sql` (all target the legacy model; `valid_face_strokes` itself must
-  survive — `demo_update_sprite` calls it), `docs/database.md` (which documents the
-  root-app schema in detail).
+### Priority 1 — low-hanging, breaks nothing (standalone migration)
 
-Notes for that migration:
-- **Keep** `private.valid_face_strokes(jsonb)` — `demo_update_sprite` calls it.
-- **Keep** the `public.sprite_colour` enum (created by 20261107000200) — even though it
-  was created for `public.sprites`, `demo_update_sprite` validates avatar colours
-  against `pg_catalog.enum_range(null::public.sprite_colour)`. Dropping
-  `public.sprites` does not drop the type (Postgres types live in their own namespace),
-  so the two can be separated cleanly.
-- `20261107000100`/`000200` altered `public.sprites` (face strokes, palette backfill).
-  Dropping `public.sprites` in a new migration is fine; the old migrations stay in
-  history untouched.
-- The legacy model is self-contained: nothing in the `demo_*` chain references it, so
-  drops won't break the deployed demo (re-verify with the PR preview before merging).
+Drop the **5 legacy storage buckets** and their **10 `storage.objects` policies**.
+Fully isolated from the demo (which only uses `demo-images`), all empty, no foreign
+keys involved — so dropping them can't cascade into the demo:
+
+- Buckets: `chat-images`, `item-images`, `loan-review-images`, `loan-verification`,
+  `profile-images`
+- Policies on `storage.objects`: `chat_image_read`, `chat_image_upload`,
+  `lending_images_read`, `lending_images_upload`, `lending_images_delete`,
+  `review_image_read`, `review_image_upload`, `verification_upload`,
+  `verification_read`, `unused_proof_delete`
+
+Safe to merge and verify on its own (the two `demo_*` suites must still pass).
+
+### Priority 2 — the full root-app retirement (one cohesive migration)
+
+The remaining objects form **one self-contained FK cluster** (`messages→chats→
+profiles→sprites`, `loans→items/lockers/profiles`, `item_images/item_lockers→items`,
+`reviews→loans`, `handoff_challenges→loans/profiles`), so they retire together, in
+this FK-safe order:
+
+1. **Triggers** first: `items_assign_sprite`, `items_remove_sprite`,
+   `profiles_assign_sprite`, `profiles_remove_sprite` (on `items`/`profiles`), then
+   `on_auth_user_created` (on `auth.users`) — ⚠️ this inserts a `public.profiles` row
+   for **every** auth user including the demo accounts; the demo doesn't need it
+   (`demo_profiles` is provisioned separately by `frontend/scripts/provision-demo.ts`).
+2. **Realtime:** `alter publication supabase_realtime drop table public.messages;`
+   (the only legacy table in the publication; all 12 `demo_*` tables stay).
+3. **Tables** (children before parents): `messages`, `reviews`,
+   `private.handoff_challenges`, `item_images`, `item_lockers`, `loans`, `chats`,
+   `friendships`, `items`, `lockers`, `profiles`, `sprites`, then
+   `private.prototype_config`.
+4. **Views:** `item_catalog`, `loan_catalog`.
+5. **Functions:** all legacy public RPCs (`create_loan`, `create_item`, `approve_loan`,
+   `cancel_loan`, `modify_loan`, `set_item_lockers`, `get_handoff_qr`,
+   `simulate_locker_scan`, `record_handoff_photo`, `send_message`,
+   `get_chat_summaries`, `get_reviews`, `save_review`, `save_review_v2`,
+   `delete_review`) and private helpers (`assign_sprite`, `remove_sprite`,
+   `create_profile`, `can_view_owner`, `chat_member`, `is_friend`,
+   `item_compliments`, `item_on_loan`, `item_status`, `loan_owner`, `next_scan`,
+   `pending_photo`, `step_actor`, `review_image_visible`,
+   `can_upload_verification`, `palette_colour_for`).
+   **Keep `private.valid_face_strokes`** — `demo_update_sprite` calls it.
+6. **Tests/docs:** delete `supabase/tests/feature_frame.sql`, `review_card.sql`,
+   `sprite_face.sql`, `sprite_palette.sql` (all target the legacy model;
+   `shared_demo.sql` and `demo_sprite.sql` stay and must still pass). Update
+   `docs/database.md`, which documents the root-app schema.
+
+Notes:
+- **Keep** `public.sprite_colour` (enum) — `demo_update_sprite` validates colours
+  against `enum_range(null::public.sprite_colour)`. Dropping `public.sprites` does not
+  drop the type (types live in their own namespace).
+- The 8 legacy `profiles`/`sprites` rows and 10 `lockers` rows are root-app data only;
+  dropping the tables removes them. If you'd rather keep them, snapshot first.
+- Re-verify on the PR preview that the deployed demo still works before merging.
 
 ## Keep — live demo surface (do not touch)
 

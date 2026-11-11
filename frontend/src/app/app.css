@@ -688,6 +688,59 @@
   right: 12px;
   top: 20px;
 }
+.map-canvas {
+  position: relative;
+  width: 100%;
+  min-height: 420px;          /* or height: 100% if the parent has a set height */
+  background-image: var(--map-grass);
+  background-repeat: repeat;
+  background-size: 160px;     /* tile size; tune to taste */
+}
+.map-item {
+  position: absolute;
+  right: auto;
+  bottom: auto;
+  width: auto;
+  z-index: 5;
+  transform: translate(-50%, calc(-100% - 64px)); /* above the TV */
+}
+.map-item--below {
+  transform: translate(-50%, 12px); /* near the top edge, flip underneath */
+}
+.map-item-tail {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+}
+.map-item--below .map-item-tail {
+  top: -8px;
+  bottom: auto;
+  transform: translateX(-50%) rotate(180deg);
+}
+.map-pin {
+  position: absolute;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+  line-height: 0;
+  cursor: pointer;
+  /* anchor at the TV's feet instead of its centre */
+  transform: translate(-50%, -100%);
+  transform-origin: 50% 100%;
+  transition: transform 0.15s ease;
+}
+.map-pin:hover { transform: translate(-50%, -100%) scale(1.12); }
+.map-pin[aria-pressed="true"] { z-index: 2; background: none; box-shadow:hsl(from color h s l)}
+.map-pin .sprite,
+.map-pin .sprite__figure,
+.map-pin svg { overflow: visible; }
+
 .chip-row {
   display: flex;
   gap: 6px;

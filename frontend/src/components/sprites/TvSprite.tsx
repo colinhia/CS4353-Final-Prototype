@@ -1,7 +1,10 @@
-import { useId, type CSSProperties } from "react";
+import { useId, useState, type CSSProperties } from "react";
 import type { SpriteAnimation } from "./types";
 import { deriveTvPalette } from "./palette";
 import "./sprites.css";
+import { isLegacyPlaceholder, ITEM_PLACEHOLDER } from "../ui/ItemImage";
+import { ItemImage } from '../../components/ui/ItemImage';
+
 
 export type TvSpriteProps = {
   // URL of the image shown on the screen, cropped to fill
@@ -34,6 +37,12 @@ export function TvSprite({
   const gradId = `${id}-body`;
   const glassId = `${id}-glass`;
   const glareId = `${id}-glare`;
+  
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const source = image?.trim() || ITEM_PLACEHOLDER;
+  const fallback = source === ITEM_PLACEHOLDER || isLegacyPlaceholder(source) || source === failedSource;
+  const src = fallback ? ITEM_PLACEHOLDER : source;
+
 
   const style = (size ? { width: size, height: (size * H) / W } : { width: "100%", aspectRatio: `${W} / ${H}` }) as CSSProperties;
   if (bodyColor) {
@@ -71,23 +80,23 @@ export function TvSprite({
         </defs>
 
         <rect x={SCREEN.x} y={SCREEN.y} width={SCREEN.w} height={SCREEN.h} rx={SCREEN.r} fill="var(--tv-screen)" />
-        {image && (
-          <image
-            href={image}
-            x={SCREEN.x}
-            y={SCREEN.y}
-            width={SCREEN.w}
-            height={SCREEN.h}
-            preserveAspectRatio="xMidYMid slice"
-            clipPath={`url(#${clipId})`}
-          />
-        )}
-        {image && (
-          <g clipPath={`url(#${clipId})`} pointerEvents="none">
-            <rect x={SCREEN.x} y={SCREEN.y} width={SCREEN.w} height={SCREEN.h} fill={`url(#${glassId})`} />
-            <rect x={SCREEN.x} y={SCREEN.y} width={SCREEN.w} height={SCREEN.h} fill={`url(#${glareId})`} />
-          </g>
-        )}
+        <image
+          href={src}
+          x={SCREEN.x}
+          y={SCREEN.y}
+          width={SCREEN.w}
+          height={SCREEN.h}
+          preserveAspectRatio="xMidYMid slice"
+          clipPath={`url(#${clipId})`}
+          onError={() => {
+            if (src !== ITEM_PLACEHOLDER) setFailedSource(source);
+          }}
+        />
+        <g clipPath={`url(#${clipId})`} pointerEvents="none">
+          <rect x={SCREEN.x} y={SCREEN.y} width={SCREEN.w} height={SCREEN.h} fill={`url(#${glassId})`} />
+          <rect x={SCREEN.x} y={SCREEN.y} width={SCREEN.w} height={SCREEN.h} fill={`url(#${glareId})`} />
+        </g>
+        
 
         <g stroke="var(--tv-outline)" strokeWidth={STROKE}>
           {/*  Feet */}

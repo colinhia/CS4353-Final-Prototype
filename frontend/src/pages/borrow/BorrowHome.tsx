@@ -251,6 +251,7 @@ export default function BorrowHome({
         </div>
 
         <NeighborhoodMap
+          area={"clementi"}
           items={mapItems}
           selected={selected}
           onSelect={(item) =>

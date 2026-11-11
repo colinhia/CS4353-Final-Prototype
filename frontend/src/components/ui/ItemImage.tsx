@@ -9,7 +9,7 @@ type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'onError'> & {
 /** Match the seeded Storage object, not arbitrary uploads with a similar filename.
  * URL parsing ignores signed-token queries without changing genuine image URLs.
  */
-function isLegacyPlaceholder(source: string): boolean {
+export function isLegacyPlaceholder(source: string): boolean {
   try {
     const path = decodeURIComponent(new URL(source, 'https://local.invalid').pathname);
     return /^\/storage\/v1\/object\/(?:sign|public|authenticated)\/demo-images\/[^/]+\/public\/seed-item-placeholder\.png$/.test(path);

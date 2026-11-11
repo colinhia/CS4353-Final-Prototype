@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { ItemImage } from '../../components/ui/ItemImage';
 import { faCircleCheck, faClock } from '../../components/ui/icons';
 import { Icon } from '../../components/Icon';
-import { CategoryIcon, FaIcon } from '../../components/ui/CategoryIcon';
+import { FaIcon } from '../../components/ui/CategoryIcon';
 import { Avatar } from '../../components/ui/shared';
 import { useOptionalApp } from '../../app/context';
 import type { BorrowItem } from './items';
 
-const PLACEHOLDER = '/assets/item-placeholder.png';
 const shortDate = (value: string) => new Intl.DateTimeFormat('en-SG', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(value + 'T00:00:00Z'));
 
 /** Availability - "Available" or "Back <date>" (on loan). */
@@ -19,8 +18,6 @@ export function ItemCard({ item, onOpen }: { item: BorrowItem & { ownerId?: stri
   const app = useOptionalApp();
   const owner = app?.store.people.find(p => p.id === item.ownerId);
   const ownerName = owner?.name ?? item.owner;
-  const [broken, setBroken] = useState(false);
-  const hasPhoto = !!item.image && item.image !== PLACEHOLDER && !broken;
   const status = availabilityLabel(item);
 
   return <button className="item-card" id={`item-${item.id}`} type="button" onClick={onOpen}
@@ -31,9 +28,7 @@ export function ItemCard({ item, onOpen }: { item: BorrowItem & { ownerId?: stri
       {item.isFriend && <span className="item-byline__friend">Friend</span>}
     </span>}
     <span className="item-visual" aria-hidden="true">
-      {hasPhoto
-        ? <img className="item-photo" src={item.image} alt="" width={166} height={166} onError={() => setBroken(true)} />
-        : <span className="item-photo item-photo--icon"><CategoryIcon category={item.category} size={46} /></span>}
+      <ItemImage className="item-photo" src={item.image} alt="" width={166} height={166} />
       <span className={`item-status item-status--${status.tone}`} title={status.full}><FaIcon icon={status.icon} size={status.tone === 'available' ? 13 : 11} />{status.tone === 'available' ? null : status.text}</span>
     </span>
     <span className="item-info" aria-hidden="true">

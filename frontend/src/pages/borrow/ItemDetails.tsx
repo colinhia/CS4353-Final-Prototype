@@ -1,3 +1,4 @@
+import { ItemImage } from '../../components/ui/ItemImage';
 import { Icon } from "../../components/Icon";
 import { UserChip } from "../../components/ui/UserChip";
 import { JourneyStrip } from "../../components/ui/JourneyStrip";
@@ -69,7 +70,7 @@ export function ItemDetails({
       aria-label="Item details"
     >
       <div className="details-hero">
-        <img className="details-photo" src={item.image} alt={title} />
+        <ItemImage className="details-photo" src={item.image} alt={title} />
         <button
           type="button"
           className="details-back"

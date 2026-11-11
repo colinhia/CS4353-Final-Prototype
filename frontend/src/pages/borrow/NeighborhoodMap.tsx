@@ -1,3 +1,4 @@
+import { ItemImage } from '../../components/ui/ItemImage';
 import { Icon } from "../../components/Icon";
 import { CategoryIcon } from "../../components/ui/CategoryIcon";
 import type { BorrowItem } from "./items";
@@ -55,8 +56,8 @@ export function NeighborhoodMap({
           aria-label={`View ${selected.name}, ${selected.location}`}
           onClick={() => onOpenItem(selected)}
         >
-          <img
-            className={`map-item-photo${selected.image.endsWith("item-placeholder.png") ? " map-item-photo--placeholder" : ""}`}
+          <ItemImage
+            className="map-item-photo"
             src={selected.image}
             alt={selected.name}
             width={140}

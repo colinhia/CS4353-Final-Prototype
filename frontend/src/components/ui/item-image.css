@@ -1,0 +1,10 @@
+/* Item photos only: avatars, evidence photos, category controls and sprites are separate. */
+.borrow-app img.item-image { border-radius: var(--item-image-radius, 8px); }
+img.item-image[data-placeholder="true"] { object-fit: contain; background: #f6f0fc; }
+
+/* Round the card silhouette, never the seams between owner, photo and info panels. */
+.item-card { border-radius: 8px; overflow: hidden; }
+.borrow-app .item-card img.item-image { border-radius: 0; }
+.map-item-photo.item-image { --item-image-radius: 6px; }
+/* Preserve the team's circular shelf status rings. */
+.borrow-app .shelf-thumb__ring > img.item-image { border-radius: inherit; }

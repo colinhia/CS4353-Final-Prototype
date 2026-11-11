@@ -1,3 +1,4 @@
+import { ItemImage } from '../components/ui/ItemImage';
 import { useState } from "react";
 import { useApp } from "../app/context";
 import { COMPLIMENTS } from "../app/domain";
@@ -41,7 +42,7 @@ export function ReviewForm({
     // Collect the borrower's rating, review text, compliments, and optional photo.
     <Modal title="Review your loan" onClose={onClose}>
       <div className="review-item">
-        <img src={item.image} alt="" width={64} height={64} />
+        <ItemImage src={item.image} alt="" width={64} height={64} />
         <strong>{item.title ?? item.name}</strong>
       </div>
 

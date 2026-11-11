@@ -1,9 +1,8 @@
 import { todayLocal, type Item, type Loan } from '../app/domain';
-import { CategoryIcon } from '../components/ui/CategoryIcon';
+import { ItemImage } from '../components/ui/ItemImage';
 
 export type ShelfState = 'available' | 'booked' | 'on-loan' | 'hidden';
 
-const PLACEHOLDER = '/assets/item-placeholder.png';
 const OUT_STATUSES = ['active', 'returning', 'verifying'];
 const PLANNED_STATUSES = ['arranging', 'ready'];
 
@@ -36,9 +35,7 @@ export function ShelfStrip({ items, loans, onOpen }: { items: Item[]; loans: Loa
         return <li key={item.id}>
           <button type="button" className={`shelf-thumb is-${state}`} onClick={() => onOpen?.(item.id)} aria-label={`${item.name}: ${LABELS[state]}`}>
             <span className="shelf-thumb__ring">
-              {photo && photo !== PLACEHOLDER
-                ? <img src={photo} alt="" />
-                : <span className="shelf-thumb__icon"><CategoryIcon category={item.category} size={26} /></span>}
+              <ItemImage src={photo} alt="" />
             </span>
             {state === 'booked' && <span className="shelf-thumb__badge" aria-hidden="true" />}
             <span className="shelf-thumb__name">{item.name}</span>

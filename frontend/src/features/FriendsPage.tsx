@@ -1,3 +1,4 @@
+import { ItemImage } from '../components/ui/ItemImage';
 import { useState } from "react";
 import { useApp, uid } from "../app/context";
 import { areFriends } from "../app/domain";
@@ -281,7 +282,7 @@ export function FriendsPage({
                     onItem(item.id);
                   }}
                 >
-                  <img src={item.image} alt="" width={44} height={44} />
+                  <ItemImage src={item.image} alt="" width={44} height={44} />
                   <span>{item.name}</span>
                 </button>
               ))}

@@ -1,3 +1,4 @@
+import { ItemImage } from '../components/ui/ItemImage';
 import { useState } from 'react';
 import { useApp } from '../app/context';
 import { COMPLIMENTS } from '../app/domain';
@@ -26,7 +27,7 @@ export function ReviewSheet({loanId,onClose}:{loanId:string;onClose:()=>void}) {
     return (
         <Modal title="Review your loan" onClose={onClose} className="review-sheet">
             <div className="review-item">
-                <img src={item.image} alt="" width={64} height={64}/>
+                <ItemImage src={item.image} alt="" width={64} height={64}/>
                 <strong>{item.title??item.name}</strong>
             </div>
 

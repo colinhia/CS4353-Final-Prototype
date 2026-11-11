@@ -1,3 +1,4 @@
+import { ItemImage } from '../components/ui/ItemImage';
 import { useState } from "react";
 import { useApp } from "../app/context";
 import { type Item } from "../app/domain";
@@ -39,7 +40,7 @@ export function SharePage({ onLoan }: { onLoan: (id: string) => void }) {
             return (
               // Represent one owned item and whether it is currently listed to borrowers.
               <article className="shelf-card" key={item.id}>
-                <img src={item.image} alt={item.name} width={84} height={84} />
+                <ItemImage src={item.image} alt={item.name} width={84} height={84} />
                 <div>
                   <h3>{item.name}</h3>
                   <p className="shelf-card__meta">

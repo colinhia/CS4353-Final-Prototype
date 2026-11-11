@@ -1,3 +1,4 @@
+import { ItemImage } from '../components/ui/ItemImage';
 import { useApp } from "../app/context";
 import { dateLabel, LOCKERS, type Loan } from "../app/domain";
 import { Icon } from "../components/Icon";
@@ -15,7 +16,7 @@ export function LoanSummary({ loan }: { loan: Loan }) {
   return (
     // Summarize the item, the other participant, the loan dates, and the exchange location.
     <div className="loan-summary">
-      <img src={item.image} alt="" width={160} height={160} />
+      <ItemImage src={item.image} alt="" width={160} height={160} />
       <div>
         <h2>{item.title ?? item.name}</h2>
         <p>

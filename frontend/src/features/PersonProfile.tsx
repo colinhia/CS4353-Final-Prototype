@@ -1,3 +1,4 @@
+import { ItemImage } from '../components/ui/ItemImage';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { useApp, uid } from '../app/context';
 import { areFriends } from '../app/domain';
@@ -77,7 +78,7 @@ function PersonProfileModal({ personId, onClose, onChat, onItem, onLoan }: { per
     {/* Shared items and reviews each scroll inside their own box*/}
     {shared.length
       ? <div className="mini-item-list profile-scroll">{shared.map(item => {
-        const content = <><img src={item.image} alt="" width={44} height={44} /><span>{item.name}</span></>;
+        const content = <><ItemImage src={item.image} alt="" width={44} height={44} /><span>{item.name}</span></>;
         return isMe
           ? <div key={item.id} className="mini-item-list__static">{content}</div>
           : <button key={item.id} type="button" onClick={() => onItem(item.id)}>{content}</button>;

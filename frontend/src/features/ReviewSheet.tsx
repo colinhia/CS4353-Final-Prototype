@@ -54,7 +54,7 @@ export function ReviewSheet({loanId,onClose}:{loanId:string;onClose:()=>void}) {
                         }
                     </div>
                 </fieldset>
-                <label>Your review
+                <label>Share your story
                     <textarea value={text} onChange={e=>setText(e.target.value)} maxLength={2000} required placeholder="What went well?"/>
                 </label>
                 <fieldset className="rating-group">

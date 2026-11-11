@@ -80,11 +80,14 @@ checks render routes, check asset references and generate a QR matrix; they do n
 establish browser layout or physical locker-device compatibility. For a manual journey, follow
 `frontend/README.md` using separate Eric and Sarah signed-in sessions.
 
-Root-app database coverage (`supabase/tests/feature_frame.sql` and the root-app
-schema in `docs/database.md`) was retired with the legacy Storage cleanup; the
-connected demo is covered by `supabase/tests/shared_demo.sql` and
-`supabase/tests/demo_sprite.sql`. Pulling frontend changes does not deploy a
-database migration.
+The root app's database coverage and schema were fully retired in two migrations:
+`20261112000100_drop_legacy_storage.sql` removed the legacy Storage buckets and the
+`feature_frame.sql`/`review_card.sql` suites, and
+`20261112000200_drop_legacy_cluster.sql` dropped the remaining legacy tables, views,
+functions and the `sprite_face.sql`/`sprite_palette.sql` suites (see
+`docs/supabase-cleanup.md`). The connected demo is covered by
+`supabase/tests/shared_demo.sql` and `supabase/tests/demo_sprite.sql`. Pulling
+frontend changes does not deploy a database migration.
 
 The connected migrations are applied. The release owner checked the preview and
 merged the feature branch into `main`. Cloudflare publishes the current demo from

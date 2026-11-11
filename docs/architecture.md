@@ -11,6 +11,13 @@ interface; they do not own React state, query caches or page navigation. Supabas
 calls and authentication/storage details live in `src/core/gateway.ts`. The
 composition root is `src/core/services.ts`.
 
+> **Status (11 November 2026):** this application is not deployed, and its
+> Supabase schema was retired by
+> `supabase/migrations/20261112000200_drop_legacy_cluster.sql` (see
+> `docs/supabase-cleanup.md`). The code in root `src/` remains in the
+> repository but its database objects no longer exist; the description below
+> is retained for reference.
+
 ```text
 pages / feature subviews
           ↓

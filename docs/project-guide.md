@@ -80,9 +80,11 @@ checks render routes, check asset references and generate a QR matrix; they do n
 establish browser layout or physical locker-device compatibility. For a manual journey, follow
 `frontend/README.md` using separate Eric and Sarah signed-in sessions.
 
-Root database coverage lives in `supabase/tests/feature_frame.sql` and rolls back
-its fixtures. `docs/database.md` documents that schema and its existing
-deployment; pulling frontend changes does not deploy a database migration.
+Root-app database coverage (`supabase/tests/feature_frame.sql` and the root-app
+schema in `docs/database.md`) was retired with the legacy Storage cleanup; the
+connected demo is covered by `supabase/tests/shared_demo.sql` and
+`supabase/tests/demo_sprite.sql`. Pulling frontend changes does not deploy a
+database migration.
 
 The connected migrations are applied. The release owner checked the preview and
 merged the feature branch into `main`. Cloudflare publishes the current demo from

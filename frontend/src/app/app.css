@@ -1083,11 +1083,15 @@
   cursor: pointer;
 }
 .star-choice > span:first-of-type {
-  font-size: 36px;
-  color: #d9d3de;
+  display: inline-flex;
+  color: #6fbe6f;
+}
+.star-choice > span:first-of-type svg {
+  width: 34px;
+  height: 34px;
 }
 .star-choice > span.filled {
-  color: var(--purple-primary);
+  color: #6fbe6f;
 }
 .star-choice input:focus-visible + span {
   outline: 2px solid var(--purple-primary);

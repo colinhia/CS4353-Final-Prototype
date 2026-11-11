@@ -116,7 +116,7 @@ it with the borrower in chat, then add a resolution note and press **Mark
 resolved**. The loan stays in verification until the issue is resolved.
 
 Once complete, the borrower can choose **Leave a review** in the loan details.
-Select a rating from one to five stars and write a review. You may also select
+Select a rating from one to five leaves and write a review. You may also select
 compliments—Great communication, Easy collection and As described—and add an
 optional photo. Press **Submit review** to save it. Reviewing is optional; the
 completed loan remains complete without one. The current preview accepts one

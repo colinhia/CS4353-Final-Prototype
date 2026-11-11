@@ -4,6 +4,7 @@ import { useApp } from "../app/context";
 import { COMPLIMENTS } from "../app/domain";
 import { ErrorText, Modal } from "../components/ui/shared";
 import { PhotoField } from "../components/ui/PhotoField";
+import { StarSticker } from "../components/ui/ReviewCard";
 
 export function ReviewForm({
   loanId,
@@ -70,7 +71,7 @@ export function ReviewForm({
           <legend>How was your experience?</legend>
           <div>
             {[1, 2, 3, 4, 5].map((value) => (
-              // Represent one star rating using an accessible radio input.
+              // Represent one leaf rating using an accessible radio input.
               <label className="star-choice" key={value}>
                 <input
                   className="sr-only"
@@ -84,10 +85,10 @@ export function ReviewForm({
                   aria-hidden="true"
                   className={value <= rating ? "filled" : ""}
                 >
-                  ★
+                  <StarSticker on={value <= rating} size={34} />
                 </span>
                 <span className="sr-only">
-                  {value} {value === 1 ? "star" : "stars"}
+                  {value} {value === 1 ? "leaf" : "leaves"}
                 </span>
               </label>
             ))}

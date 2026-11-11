@@ -9,6 +9,7 @@ import {
   ErrorText,
   Modal,
 } from "../components/ui/shared";
+import { StarRow } from "../components/ui/ReviewCard";
 
 export function FriendsPage({
   onChat,
@@ -295,7 +296,7 @@ export function FriendsPage({
             reviews.map((loan) => (
               // Display one completed-loan review received by the selected person.
               <article className="review-card" key={loan.id}>
-                <strong>{"★".repeat(loan.review!.rating)}</strong>
+                <strong className="review-card__leaves"><StarRow value={loan.review!.rating} label={`${loan.review!.rating} out of 5 leaves`} /></strong>
                 <p>{loan.review!.text}</p>
               </article>
             ))

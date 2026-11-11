@@ -1,5 +1,12 @@
 # Supabase unused-object audit (2026-11-11)
 
+Status (updated 2026-11-11): **all three cleanup stages are implemented.**
+Tier 1 (`20261111000100`) and Priority 1 (`20261112000100`) are merged into
+`main`. Priority 2 is `20261112000200_drop_legacy_cluster.sql` on branch
+`cleanup/supabase-tier3-cluster`, verified with `supabase db reset` plus both
+`demo_*` suites. The `save_review_v2` question in Tier 2 is resolved by the
+Priority 2 drop.
+
 Scope: every table, view, and function created by `supabase/migrations/`, checked
 against **all** client code (`frontend/src`, `frontend/scripts`, root `src`,
 `scripts/`) and cross-references inside the migrations themselves.
@@ -140,9 +147,16 @@ Notes:
 - Storage bucket `demo-images`.
 - `demo_seed_versions` is also queried directly by `frontend/scripts/provision-demo.ts`.
 
-## Suggested order of work
+## Suggested order of work (completed)
 
-1. Merge the Tier 1 draft migration now (small, safe, verifiable on the PR preview).
-2. Decide on `save_review_v2` (drop or adopt).
-3. Team decision: retire the root app? If yes, add the Tier 3 migration and update
-   `docs/database.md` + the three legacy test files in the same PR.
+1. ~~Merge the Tier 1 draft migration now~~ — done, `main` (PR #13).
+2. ~~Decide on `save_review_v2`~~ — dropped with the Priority 2 cluster.
+3. ~~Retire the root app?~~ — decided yes; done in
+   `20261112000200_drop_legacy_cluster.sql` (branch `cleanup/supabase-tier3-cluster`),
+   with `docs/database.md` and the remaining legacy test files updated in the
+   same change.
+
+Drop-order note learned during verification: RLS policies pin functions
+(`messages_participants` -> `private.chat_member`) and sibling tables
+(`sprites_read`/`sprites_edit` -> `items`/`profiles`), so the migration drops
+all 24 legacy-table policies explicitly (step 3.5) before dropping the tables.

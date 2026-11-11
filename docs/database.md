@@ -1,9 +1,9 @@
 # Supabase database
 
-The repository-root app uses the original tables described below. The styled
-`frontend/` app now uses separate `demo_*` tables in the same Supabase project,
-with real sessions, private image Storage and Realtime. Its loan lifecycle remains
-separate from the root app's lifecycle.
+The styled `frontend/` app is the only application in this project. It uses the
+`demo_*` tables with real sessions, private image Storage and Realtime. The root
+`src/` app's legacy schema was retired on 11 November 2026 (see the note after
+the demo sections below).
 
 
 Project: **CS4353 Final Project**, reference `ejgvfgvrmcwrixxdvwwt`.
@@ -14,8 +14,9 @@ the `private` or `supabase_migrations` schemas through the Data API.
 ## Connected completion: verified 6 November 2026
 
 The current demo uses four provisioned characters: **Eric, Sarah, Ben and Maya**.
-Their shared state is stored in `demo_*` tables. The root-frame tables described
-later in this document belong to the legacy application.
+Their shared state is stored in `demo_*` tables; the root-frame tables that once
+shared this project belonged to the legacy application (retired 11 November
+2026, see below).
 
 Migration `20261106000100_connected_completion.sql` adds `demo_help_requests` and
 `demo_offers`, member-only reads and Realtime publication. Existing `demo_state` and
@@ -46,16 +47,20 @@ version was recorded). The updated suites pass on a `supabase db reset`
 local stack; re-running `shared_demo.sql` against the managed database
 confirms the re-deployment.
 
-To repeat the current SQL suites on a disposable, migrated local Supabase stack:
+To repeat the current SQL suites on a disposable, migrated local Supabase stack
+(`supabase db reset` first). The CLI's `db query --file` cannot run these
+multi-statement suites (it uses a single prepared statement), so run them through
+psql inside the database container (`supabase_db_CS4353_-_Final_Prototype` for this
+repository):
 
 ```sh
-supabase db query --file supabase/tests/shared_demo.sql
-supabase db query --file supabase/tests/demo_sprite.sql
+cat supabase/tests/shared_demo.sql | docker exec -i -e PGPASSWORD=postgres supabase_db_CS4353_-_Final_Prototype psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1
+cat supabase/tests/demo_sprite.sql | docker exec -i -e PGPASSWORD=postgres supabase_db_CS4353_-_Final_Prototype psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1
 ```
 
-Use `--remote` only for an explicitly selected managed project. Both scripts create
-synthetic records inside a transaction and finish with rollback; do not remove that
-rollback.
+Use `supabase db query --remote` only for an explicitly selected managed project.
+Both scripts create synthetic records inside a transaction and finish with
+rollback; do not remove that rollback.
 
 ## Connected styled demo: verified 5 November 2026
 
@@ -88,111 +93,26 @@ verification](hosting.md#hosted-browser-verification-5-november-2026) for the te
 record and limits. That verification predates the merge into `main`; the current
 public demo and release status are documented in [hosting](hosting.md).
 
-## Current model
+## Legacy schema (retired 11 November 2026)
 
-| Entity                       | Purpose                                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `profiles`, `sprites`        | Auth-backed users, avatar image, one sprite per user/item                                               |
-| `items`, `item_images`       | Owner, name, description, normalized category tags, photos                                              |
-| `lockers`, `item_lockers`    | `location1` through `location10`; an item allows multiple lockers                                       |
-| `friendships`                | Two distinct users; each request needs recipient acceptance; duplicate pairs allowed                    |
-| `chats`, `messages`          | Exactly two users per chat; text/optional image messages; duplicate chat pairs allowed                  |
-| `loans`                      | Borrower, item, inclusive dates, chosen locker, revision, approval, cancellation and four handoff slots |
-| `reviews`                    | One optional borrower review per completed loan, editable/deletable by its author                       |
-| `private.handoff_challenges` | Actor/revision/step-bound simulated scan challenges                                                     |
-| `private.prototype_config`   | Versioned return checklist template, snapshotted into each loan                                         |
+Migration `20261112000200_drop_legacy_cluster.sql` dropped the root `src/`
+app's schema: the `profiles`, `sprites`, `items`, `item_images`, `lockers`,
+`item_lockers`, `loans`, `chats`, `messages`, `reviews`, `friendships` tables,
+`private.handoff_challenges` and `private.prototype_config`, the
+`item_catalog`/`loan_catalog` views, and the legacy commands and private
+helpers (`create_loan`, `simulate_locker_scan`, `save_review`,
+`send_message`, and the rest listed in `docs/supabase-cleanup.md`). The
+root-app data (8 profiles, 8 sprites, 10 seeded locker names) was
+root-app-only and discarded with the tables; the earlier detailed description
+of that schema survives in the git history of this document. The live demo is
+unaffected because it uses only the `demo_*` objects.
 
-Legacy coordinate locations remain in `item_locations` and inherited
-`user_locations`; the new UI uses the fixed locker catalog. Existing loans are
-preserved with their old approval and evidence. No locker is fabricated for them.
-A legacy loan without a locker must be updated by its borrower before using the
-new handoff workflow. Old embedded review columns remain for compatibility/history;
-new review reads and writes use `reviews`, including migrated earlier reviews.
-
-Profiles and item photos coexist with their sprites. User sprites have hex colour,
-head/torso asset IDs and integer level; item sprites have category and hex colour.
-The database creates sprites automatically and enforces one matching sprite each.
-
-## Loan rules
-
-A borrower requests a friend's item and chooses one allowed locker. Dates reserve
-immediately, including pending requests. The exclusion constraint rejects overlapping
-inclusive ranges under concurrency; an end date blocks a booking starting that day.
-Cancellation before borrower collection releases dates and keeps the history.
-The borrower can modify a plan before collection, clearing approval and increasing
-the revision. Either participant can cancel before collection. Editing and cancelling
-are blocked after borrower collection. The owner must approve before the first scan.
-
-`loan_catalog.lifecycle_status` is `created`, `plan_approved`, `on_loan`, `returned`,
-or `cancelled`. Review state is independent. Temporal status is `upcoming` when the
-planned start is in the future, otherwise `current`, until final owner collection
-makes it `past`. Overdue loans remain current until collected by the owner.
-
-| Simulated scan     | Actor    | Immediate state               | Required follow-up                       |
-| ------------------ | -------- | ----------------------------- | ---------------------------------------- |
-| `owner_dropoff`    | Owner    | Ready for borrower collection | One locker photo                         |
-| `borrower_pickup`  | Borrower | On loan                       | One locker photo                         |
-| `borrower_dropoff` | Borrower | Ready for owner collection    | One locker photo                         |
-| `owner_pickup`     | Owner    | Returned/Past                 | One locker photo + snapshotted checklist |
-
-Each scan advances state before photo upload. A pending photo blocks the next scan.
-A separate physical-custody check prevents starting another handoff while the prior
-handoff/final evidence is unfinished, even when its dates do not overlap.
-The item read model reports `available`, `ready_for_collection`, or `on_loan`.
-This status is independent of whether the viewer can read the private loan.
-
-## Commands and read models
-
-Use the feature services in `src/features/` from UI code. Those call the following
-trusted commands; the database derives the actor from the authenticated session.
-
-| Command                       | Inputs                                                                     |
-| ----------------------------- | -------------------------------------------------------------------------- |
-| `create_item`                 | `item_name`, `description_text`, `tags`, `locker_ids`                      |
-| `set_item_lockers`            | `target`, `locker_ids`                                                     |
-| `create_loan`                 | `target_item`, `start_date`, `end_date`, `selected_locker`                 |
-| `modify_loan`                 | `target`, `start_date`, `end_date`, `selected_locker`, `expected_revision` |
-| `approve_loan`, `cancel_loan` | `target`, `expected_revision`                                              |
-| `get_handoff_qr`              | `target`, `expected_revision`                                              |
-| `simulate_locker_scan`        | `challenge`                                                                |
-| `record_handoff_photo`        | `target`, `step`, `image_path`, `answers`                                  |
-| `save_review`                 | `target_loan`, `body_text`, `selected_compliments`, `image_path_value`     |
-| `delete_review`               | `target`                                                                   |
-| `get_reviews`                 | Optional `target_item`, `received_by`                                      |
-| `send_message`                | `target_chat`, `text_body`, `request_id`, optional `image_path_value`      |
-| `get_chat_summaries`          | None                                                                       |
-
-Read `item_catalog` for public item state, `loan_catalog` for participant-only
-loan state, and `get_reviews` for public safe review fields. Public reviews omit
-loan dates, locker, loan ID and evidence. The borrower can write a review only after
-all final evidence; deleting one leaves the completed loan intact. Compliments are
-fixed to `Compliment 1`, `Compliment 2`, `Compliment 3` and inherited by item/owner.
-
-Friendships, chats, profiles and sprites use narrow table grants plus row policies.
-Direct client writes to loan lifecycle/evidence and reviews/messages are denied;
-commands enforce actor, plan revision and transition rules. Errors have a readable
-code prefix such as `STALE_PLAN`, `INVALID_TRANSITION` or `EVIDENCE_REQUIRED`.
-
-## Files and privacy
-
-All buckets are private and restrict JPEG/PNG/WebP uploads to 5 MB.
-
-| Bucket               | Stored path                  | Read access                                                      |
-| -------------------- | ---------------------------- | ---------------------------------------------------------------- |
-| `profile-images`     | `<user>/<filename>`          | Signed-in users                                                  |
-| `item-images`        | `<owner>/<item>/<filename>`  | Signed-in users                                                  |
-| `loan-verification`  | `<loan>/<step>/<filename>`   | Loan participants only                                           |
-| `loan-review-images` | `<loan>/<filename>`          | Signed-in users after review references it; uploader can preview |
-| `chat-images`        | `<chat>/<sender>/<filename>` | Chat participants only                                           |
-
-Upload through Storage first, then attach through the relevant command. Verification
-uploads no longer change loan state through a Storage trigger. The command verifies
-the stored object belongs to the actor and matches the loan/step. Recorded proof
-cannot be overwritten or deleted by clients. Unreferenced own proof uploads may be
-removed. Use short-lived signed URLs; an already issued URL remains usable until expiry.
-
-Realtime publishes `messages`; row policies restrict deliveries to participants.
-No chat-to-item or chat-to-loan relationship is introduced.
+Two legacy objects are deliberately kept because `demo_update_sprite` uses
+them: `private.valid_face_strokes(jsonb)` and the `public.sprite_colour`
+enum type (its eight palette names). The `btree_gist` extension stays for
+`demo_loans`' overlap exclusion. The only remaining Storage bucket is
+`demo-images`, and `supabase_realtime` publishes only the twelve `demo_*`
+tables.
 
 ## Migration and verification
 
@@ -201,12 +121,13 @@ has versions `20261030000100`, `20261030000200`, `20261030000300` recorded; do n
 reapply them. `20261030000300_feature_frame.sql` was rehearsed with rollback tests,
 then deployed on 30 October 2026 with its exact source recorded in migration history.
 
-The legacy root-app suite **`supabase/tests/feature_frame.sql`** (and
-`review_card.sql`) was removed with the legacy Storage buckets in migration
-`20261112000100_drop_legacy_storage.sql`, because both exercised the dropped
-`loan-verification`/`chat-images` buckets. The root-app schema documented above is
-retired as part of that cleanup (see `docs/supabase-cleanup.md`); the live demo is
-covered by `shared_demo.sql` and `demo_sprite.sql`.
+The legacy root-app suites were removed in stages: `feature_frame.sql` and
+`review_card.sql` with the legacy Storage buckets
+(`20261112000100_drop_legacy_storage.sql`), then `sprite_face.sql` and
+`sprite_palette.sql` with the full schema cluster
+(`20261112000200_drop_legacy_cluster.sql`). The live demo is covered by
+`shared_demo.sql` and `demo_sprite.sql`; see `docs/supabase-cleanup.md` for the
+audit.
 Live checks create temporary `[smoke]` rows; an administrator can remove these
 after reviewing the results. Uploaded test files are removed by the test workflow.
 Frontend unit/component tests and `pnpm build` provide local checks without hosted

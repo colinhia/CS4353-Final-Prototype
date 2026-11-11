@@ -688,6 +688,14 @@
   right: 12px;
   top: 20px;
 }
+.map-canvas {
+  position: relative;
+  width: 100%;
+  min-height: 420px;          /* or height: 100% if the parent has a set height */
+  background-image: var(--map-grass);
+  background-repeat: repeat;
+  background-size: 160px;     /* tile size; tune to taste */
+}
 .chip-row {
   display: flex;
   gap: 6px;

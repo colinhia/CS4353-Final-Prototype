@@ -79,6 +79,8 @@ select pg_temp.act('{"type":"read-thread","peerId":"50000000-0000-0000-0000-0000
 select pg_temp.ok((select data->>'read'='true' from public.demo_messages where id='50000000-0000-0000-0000-000000000099'),'recipient read receipt');
 select set_config('request.jwt.claim.sub','50000000-0000-0000-0000-000000000003',true);
 select pg_temp.ok(jsonb_array_length(public.demo_public_reviews())>=1,'outsider reads safe review aggregate');
+select pg_temp.ok(exists(select 1 from jsonb_array_elements(public.demo_public_reviews()) r where r->>'itemId'='sql-test-item' and r->'review'->>'text'='Great camera'),'outsider can identify reviews by item');
+select pg_temp.ok(not exists(select 1 from jsonb_array_elements(public.demo_public_reviews()) r where r ? 'loanId' or r ? 'borrowerId'),'public review projection omits private loan and borrower IDs');
 select pg_temp.ok(not exists(select 1 from storage.objects where bucket_id='demo-images' and name like '%/proof/sql-test-loan/%'),'outsider cannot read proof');
 select pg_temp.ok(not exists(select 1 from public.demo_messages),'outsider cannot read conversation');
 -- Connected Help requests/offers use the RPC, not the local reducer.

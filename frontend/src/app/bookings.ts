@@ -1,6 +1,6 @@
 import type { Loan } from "./domain";
 import { useEffect, useState } from "react";
-import { gateway } from "../../../src/core/gateway"; // adjust to the real file name
+import { appBackend } from "../services/backend";
 
 
 const FREE_STATUSES = ["complete", "declined", "cancelled"];
@@ -53,21 +53,10 @@ export function useItemBookings(itemId: string, refreshKey?: unknown) {
   const [rows, setRows] = useState<Loan[]>([]);
   useEffect(() => {
     let cancelled = false;
-    gateway
-      .list("demo_item_bookings", { eq: { item_id: itemId } })
-      .then((data) => {
-        if (cancelled) return;
-        setRows(
-          data.map((r) => ({
-            id: r.id,
-            itemId: r.item_id,
-            start: r.starts_on,
-            end: r.ends_on,
-            status: r.status,
-            borrowerId: "", // unknown, so it counts as someone else's
-          })) as unknown as Loan[],
-        );
-      })
+    const backend = appBackend();
+    if (!backend?.getItemBookings) return;
+    backend.getItemBookings(itemId)
+      .then((data) => { if (!cancelled) setRows(data); })
       .catch(() => { if (!cancelled) setRows([]); });
     return () => { cancelled = true; };
   }, [itemId, refreshKey]);

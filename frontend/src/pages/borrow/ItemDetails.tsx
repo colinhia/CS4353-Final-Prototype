@@ -8,6 +8,7 @@ import { useOptionalApp } from "../../app/context";
 import { spriteFor } from "../../app/sprite";
 import { Availability } from "./Availability";
 import type { BorrowItem } from "./items";
+import { itemReviews } from "../../app/item-reviews";
 import { todayLocal } from "../../app/domain";
 
 export function ItemDetails({
@@ -30,9 +31,7 @@ export function ItemDetails({
     app && owner ? spriteFor(app.store, owner.id).bodyColor : undefined;
   const title = item.title ?? item.name;
   const viewerOwnsItem = !!app && item.ownerId === app.store.activeUserId;
-  const journey = (app?.store.loans ?? [])
-    .filter((l) => l.itemId === item.id && l.review)
-    .sort((a, b) => b.review!.at.localeCompare(a.review!.at))
+  const journey = (app ? itemReviews(app.store, item.id, viewerOwnsItem) : [])
     .map((l, i) => ({
       id: l.id,
       content: (
@@ -45,7 +44,7 @@ export function ItemDetails({
             text: l.review!.text,
             compliments: l.review!.compliments,
             photo: l.review!.photo,
-            author: app?.store.people.find((p) => p.id === l.borrowerId),
+            author: app?.store.people.find((p) => p.id === l.authorId),
           }}
         />
       ),

@@ -11,6 +11,7 @@ Object.assign(globalThis, {
   window: dom.window,
   document: dom.window.document,
   HTMLElement: dom.window.HTMLElement,
+  FileReader: dom.window.FileReader,
   IS_REACT_ACT_ENVIRONMENT: true,
 });
 dom.window.HTMLDialogElement.prototype.showModal = function () {
@@ -137,6 +138,17 @@ const backend = makeDemoServices({
       return { data: { subscription: { unsubscribe: noop } } };
     },
     getSession: async () => ({ data: { session: null } }),
+    // The photo step uploads the data URL before the command RPC runs.
+    getUser: async () => ({
+      data: { user: { id: snapshot.activeUserId, email: "test@example.test" } },
+      error: null,
+    }),
+  },
+  // Accept the mock storage upload and hand back a stable object path.
+  storage: {
+    from: () => ({
+      upload: async (path) => ({ data: { path }, error: null }),
+    }),
   },
   rpc: async (name, args) => {
     // Return the current remote snapshot for the read RPC.
@@ -408,15 +420,115 @@ try {
       null,
       "the scan assigns the locker; the user does not key one in",
     );
-    const assigned = document.querySelector(".locker-number strong");
+    const assigned = document.querySelector(".locker-position__label strong");
     // Verify that each handover stage displays its assigned locker number.
     assert.equal(
       assigned?.textContent,
       "12",
       `${stage} shows the assigned locker`,
     );
+    const grid = document.querySelector('.locker-position__grid');
+    assert.equal(grid?.getAttribute('role'), 'img');
+    assert.match(grid?.getAttribute('aria-label') ?? '', /Locker 12, row 2, column 4/);
+    const cells = [...grid.querySelectorAll('.locker-position__cell')];
+    assert.equal(cells.length, 32);
+    assert.equal(cells.filter(cell => cell.classList.contains('locker-position__cell--assigned')).length, 1);
+    assert.ok(cells[11].classList.contains('locker-position__cell--assigned'), `${stage} highlights locker 12`);
+
     await unmount();
   }
+
+  // The report-issue option appears only after the handover photo is taken and
+  // its note is saved with that handover photo.
+  handover.proofs = {
+    ownerDropoff: {
+      at: "2026-11-05T02:00:00Z",
+      photo: "/assets/item-placeholder.png",
+      actor: handover.ownerId,
+      lockerNumber: "12",
+    },
+  };
+  handover.status = "ready";
+  snapshot.activeUserId = handover.borrowerId;
+  await mount(
+    h(LockerFlow, { loanId: handover.id, onClose: noop, onDone: noop }),
+    backend,
+    structuredClone(snapshot),
+  );
+  for (const label of ["Simulate locker scan", "Continue to item photo"])
+    await act(async () => {
+      button(label).click();
+      await settle();
+    });
+  // Verify that no issue can be reported before the handover photo exists.
+  assert.equal(button("Report issue"), undefined, "no report option before a photo");
+  const photoInput = document.querySelector(
+    'input[type="file"][accept*="image"]',
+  );
+  // Verify that the photo fallback input is present when no camera is available.
+  assert.ok(photoInput, "photo step offers a file fallback");
+  await act(async () => {
+    Object.defineProperty(
+      photoInput,
+      "files",
+      {
+        value: [
+          new dom.window.File(["photo-bytes"], "item.jpg", {
+            type: "image/jpeg",
+          }),
+        ],
+      },
+    );
+    photoInput.dispatchEvent(
+      new dom.window.Event("change", { bubbles: true }),
+    );
+    // Let the picked file finish reading as a data URL.
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await settle();
+  });
+  // Verify that the report-issue option appears once the photo is taken.
+  assert.ok(button("Report issue"), "report option appears after a photo");
+  assert.equal(button("Confirm pickup").disabled, false);
+  await act(async () => {
+    button("Report issue").click();
+    await settle();
+  });
+  // Verify that the note field appears while reporting an issue.
+  assert.ok(
+    document.querySelector(".issue-report textarea"),
+    "reporting reveals a note field",
+  );
+  await fill(document.querySelector(".issue-report textarea"), "   ");
+  // Verify that the confirm control is blocked until the issue is described.
+  assert.equal(
+    button("Confirm pickup · issue").disabled,
+    true,
+    "a short issue note blocks the confirm control",
+  );
+  await fill(
+    document.querySelector(".issue-report textarea"),
+    "  The lid hinge is broken.  ",
+  );
+  await act(async () => {
+    button("Confirm pickup · issue").click();
+    await settle();
+  });
+  // Verify that the issue note is submitted with the handover proof.
+  assert.equal(
+    calls.at(-1).command.type,
+    "record-proof",
+    "confirming a reported issue records the proof",
+  );
+  assert.equal(
+    calls.at(-1).command.issueNote,
+    "The lid hinge is broken.",
+    "the trimmed issue note travels with the handover proof",
+  );
+  assert.ok(
+    document.body.textContent.includes("Verified successfully"),
+    "the reported handover completes",
+  );
+  await unmount();
 
   // Real Supabase Auth clients + separate tab stores: login, sign-out and reload.
   const secondDom = new JSDOM("", { url: "https://local.test/" });
@@ -530,7 +642,7 @@ try {
     secondDom.window.close();
   }
   console.log(
-    "Connected interaction checks passed: Help failure/pending/success, review editing/revisions, all four external-scanner handovers, and real Supabase cross-tab auth isolation/reload.",
+    "Connected interaction checks passed: Help failure/pending/success, review editing/revisions, all four external-scanner handovers, issue reporting after the handover photo, and real Supabase cross-tab auth isolation/reload.",
   );
 } finally {
   // Render the requested handover view when a test view is supplied.

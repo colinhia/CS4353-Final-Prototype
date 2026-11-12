@@ -38,6 +38,16 @@ locally and against managed Supabase after deployment; synthetic fixtures rolled
 Local Storage uses a minimal SQL fixture; managed checks exercise the real policies.
 Physical files, cameras and hosted browser acceptance are separate checks.
 
+On 13 November 2026 the handover issue-report change made `record-proof` accept an
+optional `issueNote` (5-2000 trimmed characters) that is stored with the handover
+photo, shown under the loan's handover photos, and mentioned in the peer notice.
+Because the hosted project's recorded migration sources predate the last
+re-deployment, `public.demo_command_base` was re-deployed as a `create or replace`
+from the `20261113000100_handover_issue_note.sql` source (no new version was
+recorded in migration history). The live function was then verified byte-identical
+to that source, and both current SQL suites were re-run against the managed
+database in rollback-only transactions; all fixtures rolled back.
+
 On 6 November 2026 the locker handover change replaced the user-entered
 locker number with a locker assigned by the simulated scan. The hosted
 project's recorded migration sources predate that wording, so

@@ -408,13 +408,21 @@ try {
       null,
       "the scan assigns the locker; the user does not key one in",
     );
-    const assigned = document.querySelector(".locker-number strong");
+    const assigned = document.querySelector(".locker-position__label strong");
     // Verify that each handover stage displays its assigned locker number.
     assert.equal(
       assigned?.textContent,
       "12",
       `${stage} shows the assigned locker`,
     );
+    const grid = document.querySelector('.locker-position__grid');
+    assert.equal(grid?.getAttribute('role'), 'img');
+    assert.match(grid?.getAttribute('aria-label') ?? '', /Locker 12, row 2, column 4/);
+    const cells = [...grid.querySelectorAll('.locker-position__cell')];
+    assert.equal(cells.length, 32);
+    assert.equal(cells.filter(cell => cell.classList.contains('locker-position__cell--assigned')).length, 1);
+    assert.ok(cells[11].classList.contains('locker-position__cell--assigned'), `${stage} highlights locker 12`);
+
     await unmount();
   }
 

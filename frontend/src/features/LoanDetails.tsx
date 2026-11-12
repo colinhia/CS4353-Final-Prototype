@@ -409,7 +409,7 @@ export function LoanDetails({
         <details className="proof-history">
           <summary>Handover photos</summary>
           {Object.entries(loan.proofs).map(([key, proof]) => (
-            // Display the evidence photo with its handover-stage label and recorded locker number.
+            // Display the evidence photo, its handover-stage label, and any issue note.
             <figure key={key}>
               <img
                 src={proof.photo}
@@ -419,6 +419,11 @@ export function LoanDetails({
                 {PROOF_LABELS[key as keyof typeof PROOF_LABELS]} · Locker{" "}
                 {proof.lockerNumber}
               </figcaption>
+              {proof.issueNote && (
+                <p className="issue-note" role="note">
+                  <strong>Issue reported:</strong> {proof.issueNote}
+                </p>
+              )}
             </figure>
           ))}
         </details>

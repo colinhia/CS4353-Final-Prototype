@@ -608,6 +608,14 @@
 .proof-history figure {
   margin: 16px 0;
 }
+.proof-history .issue-note {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid #a33c3c;
+  background: #fff0ef;
+  border-radius: 6px;
+  color: #5c1f1f;
+}
 .proof-history img,
 .review-photo {
   max-width: 100%;
@@ -2453,6 +2461,33 @@
 
 .camera-capture { width: 100%; max-width: 360px; margin-inline: auto; }
 .camera-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.issue-report {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid #a33c3c;
+  border-radius: 8px;
+  background: #fff8f7;
+}
+.issue-report p {
+  margin-top: 0;
+}
+.issue-report label {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.issue-report textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  min-height: 72px;
+  font: inherit;
+  font-weight: 400;
+  border: 1px solid #a33c3c;
+  border-radius: 8px;
+  padding: 8px;
+}
 .camera-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 24px; border: 1px solid var(--purple-primary, #6554a4); border-radius: 999px; background: white; color: var(--purple-primary, #6554a4); font: inherit; font-weight: 600; cursor: pointer; transition: background .15s, box-shadow .15s; }
 .camera-button-primary { background: var(--purple-primary, #6554a4); color: white; box-shadow: 0 3px 8px #30204a26; }
 .camera-button:hover:not(:disabled) { box-shadow: 0 4px 12px #30204a40; }

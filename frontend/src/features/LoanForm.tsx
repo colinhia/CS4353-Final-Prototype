@@ -11,6 +11,7 @@ import {
 } from "../app/domain";
 import { ErrorText, Glyph, Modal } from "../components/ui/shared";
 import { DatePicker } from "./DatePicker";
+import { mergeLoans, useItemBookings } from "../app/bookings";
 
 export function LoanForm({
   item,
@@ -25,7 +26,7 @@ export function LoanForm({
 }) {
   const app = useOptionalApp();
   const { perform, toast, busy: saving } = useApp();
-  const loans = app?.store.loans.filter((l) => l.itemId === item.id);
+  const loans = app?.store.loans.filter((l) => l.itemId === item.id) || [];
   const me = app?.store.activeUserId;
   const [newId] = useState(uid);
   const today = todayLocal();
@@ -34,6 +35,8 @@ export function LoanForm({
   const [lockerId, setLockerId] = useState(loan?.lockerId ?? "");
   const [error, setError] = useState("");
   const [picker, setPicker] = useState<"dates" | "locker" | null>(null);
+  const bookings = useItemBookings(item.id, loans.length);
+  const calendarLoans = mergeLoans(loans, bookings);
 
   return (
     // Reuse one exchange-plan form for an initial request or a counterproposal.
@@ -131,7 +134,7 @@ export function LoanForm({
 
       {picker === "dates" && (
         <DatePicker start={start} end={end}
-          itemId={item.id} loans={loans} me={me} ignoreLoanId={loan?.id}
+          itemId={item.id} loans={calendarLoans} me={me} ignoreLoanId={loan?.id}
           onClose={() => setPicker(null)}
           onDone={(s, e) => { setStart(s); setEnd(e); setPicker(null); }} 
         />

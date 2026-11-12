@@ -1,5 +1,7 @@
 import type { Loan } from "./domain";
 import { useEffect, useState } from "react";
+import { gateway } from "../../../src/core/gateway"; // adjust to the real file name
+
 
 const FREE_STATUSES = ["complete", "declined", "cancelled"];
 export const PENDING_STATUSES = ["requested", "arranging"];
@@ -51,23 +53,22 @@ export function useItemBookings(itemId: string, refreshKey?: unknown) {
   const [rows, setRows] = useState<Loan[]>([]);
   useEffect(() => {
     let cancelled = false;
-    supabase
-      .from("demo_item_bookings")
-      .select("id, item_id, starts_on, ends_on, status")
-      .eq("item_id", itemId)
-      .then(({ data }) => {
+    gateway
+      .list("demo_item_bookings", { eq: { item_id: itemId } })
+      .then((data) => {
         if (cancelled) return;
         setRows(
-          (data ?? []).map((r) => ({
+          data.map((r) => ({
             id: r.id,
             itemId: r.item_id,
             start: r.starts_on,
             end: r.ends_on,
             status: r.status,
-            borrowerId: undefined, // unknown, so the calendar treats it as someone else's
+            borrowerId: "", // unknown, so it counts as someone else's
           })) as unknown as Loan[],
         );
-      });
+      })
+      .catch(() => { if (!cancelled) setRows([]); });
     return () => { cancelled = true; };
   }, [itemId, refreshKey]);
   return rows;

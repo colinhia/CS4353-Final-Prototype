@@ -10,6 +10,7 @@ import { Availability } from "./Availability";
 import type { BorrowItem } from "./items";
 import { itemReviews } from "../../app/item-reviews";
 import { todayLocal } from "../../app/domain";
+import { mergeLoans, useItemBookings } from '../../app/bookings';
 
 export function ItemDetails({
   item,
@@ -28,6 +29,8 @@ export function ItemDetails({
   const owner = app?.store.people.find((p) => p.id === item.ownerId);
   const ownerName = owner?.name ?? item.owner ?? "owner";
   const loans = (app?.store.loans ?? []).filter((l) => l.itemId === item.id)
+  const bookings = useItemBookings(item.id, loans.length);
+  const calendarLoans = mergeLoans(loans, bookings);
   const me = app?.store.activeUserId
   
   const tvColour =
@@ -111,11 +114,7 @@ export function ItemDetails({
           <p className="details-description">{item.description}</p>
         )}
 
-        <Availability
-          itemId={item.id}
-          loans={loans}
-          me={app?.store.activeUserId}
-        />
+        <Availability itemId={item.id} loans={calendarLoans} me={me} />
 
         <JourneyStrip entries={journey} />
       </div>

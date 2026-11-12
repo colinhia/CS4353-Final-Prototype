@@ -74,19 +74,6 @@ export function Availability({ itemId, loans = [], me, today = todayLocal() }: {
 
   return (
     <section className="availability" aria-label="Availability">
-      <pre style={{ fontSize: 11, whiteSpace: "pre-wrap", background: "#fff8", padding: 8 }}>
-  {JSON.stringify(
-    {
-      me,
-      totalLoans: loans.length,
-      forThisItem: loans
-        .filter((l) => l.itemId === itemId)
-        .map((l) => ({ id: l.id, borrower: l.borrowerId, status: l.status, start: l.start, end: l.end })),
-    },
-    null,
-    2,
-  )}
-</pre>
       <div className="availability__head">
         <h2>Availability</h2>
         <span className={`availability__status availability__status--${summary.tone}`}>{summary.text}</span>

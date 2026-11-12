@@ -2493,3 +2493,43 @@
 .camera-button:hover:not(:disabled) { box-shadow: 0 4px 12px #30204a40; }
 .camera-button:focus-visible { outline: 3px solid var(--purple-primary, #6554a4); outline-offset: 3px; }
 .camera-button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+/* Cosmetic locker map: row-major numbering, with the assignment highlighted. */
+.locker-position {
+  margin: 24px auto;
+  max-width: 360px;
+  text-align: center;
+}
+.locker-position__label {
+  font-size: 16px;
+  font-weight: 600;
+}
+.locker-position__label strong {
+  display: block;
+  margin: 8px 0 24px;
+  font-size: clamp(48px, 16vw, 68px);
+  line-height: 1;
+  color: #202020;
+}
+.locker-position__grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  border-top: 1px solid #adc5a6;
+  border-left: 1px solid #adc5a6;
+}
+.locker-position__cell {
+  aspect-ratio: 1.08;
+  background: #e8f3df;
+  border-right: 1px solid #adc5a6;
+  border-bottom: 1px solid #adc5a6;
+}
+.locker-position__cell--assigned {
+  background: #cbb5f5;
+  outline: 2px solid #7651bc;
+  outline-offset: -2px;
+}
+.locker-position__hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #666;
+}

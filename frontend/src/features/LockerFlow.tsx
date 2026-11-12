@@ -9,6 +9,7 @@ import {
 } from "../app/domain";
 import { ErrorText, Glyph, Modal } from "../components/ui/shared";
 import { CameraCapture } from "../components/ui/CameraCapture";
+import { LockerPosition } from "../components/ui/LockerPosition";
 import { QrCode } from "../components/ui/QrCode";
 
 export function LockerFlow({
@@ -105,10 +106,7 @@ export function LockerFlow({
           <p className="locker-location">
             {LOCKERS.find((l) => l.id === loan.lockerId)?.label}
           </p>
-          <div className="locker-number">
-            Your locker
-            <strong>{lockerNumber.padStart(2, "0")}</strong>
-          </div>
+          <LockerPosition number={lockerNumber} />
           <p>
             {pickup
               ? "Collect the item from the locker shown above."

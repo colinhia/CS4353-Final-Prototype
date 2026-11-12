@@ -98,7 +98,7 @@ export type Store = {
   version: 1;
   helpRequests?: HelpRequest[];
   offers?: Offer[];
-  receivedReviews?: { id: string; ownerId: string; review: Review }[];
+  receivedReviews?: { id: string; ownerId: string; itemId?: string; review: Review }[];
   activeUserId: string;
   people: Person[];
   items: Item[];

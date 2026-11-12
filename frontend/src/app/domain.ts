@@ -39,6 +39,8 @@ export type Proof = {
   photo: string;
   actor: string;
   lockerNumber: string;
+  // Optional issue note captured at this handover; shown under the handover photo.
+  issueNote?: string;
 };
 export type Review = {
   rating: number;
@@ -290,6 +292,8 @@ export type Command =
       code: string;
       lockerNumber: string;
       assignmentVerified?: boolean;
+      // Optional note reporting an item issue observed during this handover.
+      issueNote?: string;
     }
   | {
       type: "verify-condition";
@@ -585,11 +589,22 @@ export function applyCommand(
           Number(command.lockerNumber) > 0,
         "The locker scan did not assign a valid locker.",
       );
+      // Accept an optional issue note; when reporting an issue, describe it in
+      // at least five trimmed characters and no more than 2000.
+      requireValue(
+        !command.issueNote ||
+          (command.issueNote.trim().length >= 5 &&
+            command.issueNote.trim().length <= 2000),
+        "Describe the issue in at least 5 characters.",
+      );
       l.proofs[command.step] = {
         at: env.now,
         photo: command.photo,
         actor: me,
         lockerNumber: command.lockerNumber,
+        ...(command.issueNote?.trim()
+          ? { issueNote: command.issueNote.trim() }
+          : {}),
       };
       l.status =
         command.step === "ownerDropoff"
@@ -601,7 +616,9 @@ export function applyCommand(
               : "verifying";
       notify(
         me === l.ownerId ? l.borrowerId : l.ownerId,
-        `${name} completed: ${PROOF_LABELS[command.step].toLowerCase()}.`,
+        command.issueNote?.trim()
+          ? `${name} completed a handover and reported an item issue.`
+          : `${name} completed a handover.`,
         l.id,
       );
       break;

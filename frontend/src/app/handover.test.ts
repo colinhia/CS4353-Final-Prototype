@@ -106,3 +106,90 @@ test("borrowers cannot review an unfinished loan or claim an owner handover", ()
     /ready/i,
   );
 });
+test("an issue note is saved with the handover photo when one is reported", () => {
+  const s = createSeed(env.today),
+    loan = s.loans.find((l) => l.id === "demo-active")!;
+  // Verify that a handover recorded without an issue stays note-free.
+  assert.equal(
+    applyCommand(
+      s,
+      {
+        type: "record-proof",
+        loanId: loan.id,
+        step: "borrowerPickup",
+        code: handoverCode(loan, "borrowerPickup"),
+        lockerNumber: "12",
+        assignmentVerified: true,
+        photo: "data:image/jpeg;base64,dGVzdA==",
+      },
+      env,
+    ).loans.find((l) => l.id === loan.id)!.proofs.borrowerPickup.issueNote,
+    undefined,
+    "no issue reported stores no issueNote key",
+  );
+  const withNote = createSeed(env.today),
+    target = withNote.loans.find((l) => l.id === loan.id)!;
+  // Verify that a reported issue is trimmed and stored with the proof photo.
+  const updated = applyCommand(
+    withNote,
+    {
+      type: "record-proof",
+      loanId: loan.id,
+      step: "borrowerPickup",
+      code: handoverCode(loan, "borrowerPickup"),
+      lockerNumber: "12",
+      assignmentVerified: true,
+      photo: "data:image/jpeg;base64,dGVzdA==",
+      issueNote: "  Lid hinge is broken.  ",
+    },
+    env,
+  );
+  const proof = updated.loans
+    .find((l) => l.id === loan.id)!
+    .proofs.borrowerPickup;
+  assert.equal(proof.issueNote, "Lid hinge is broken.");
+  assert.equal(proof.photo, "data:image/jpeg;base64,dGVzdA==");
+  // Verify that the handover peer is told an item issue was reported.
+  assert.match(
+    updated.notices.find(
+      (n) => n.to === target.ownerId && n.loanId === loan.id,
+    )!.text,
+    /issue/i,
+  );
+});
+test("a reported handover issue must describe the problem", () => {
+  const s = createSeed(env.today),
+    loan = s.loans.find((l) => l.id === "demo-active")!;
+  const attempt = (issueNote: string) =>
+    applyCommand(
+      s,
+      {
+        type: "record-proof",
+        loanId: loan.id,
+        step: "borrowerPickup",
+        code: handoverCode(loan, "borrowerPickup"),
+        lockerNumber: "12",
+        assignmentVerified: true,
+        photo: "data:image/jpeg;base64,dGVzdA==",
+        issueNote,
+      },
+      env,
+    );
+  // Verify that a too-short issue description is rejected without recording a proof.
+  assert.throws(() => attempt("Dent"), /at least 5 characters/i);
+  assert.throws(() => attempt("   "), /at least 5 characters/i);
+  assert.equal(
+    s.loans.find((l) => l.id === loan.id)!.proofs.borrowerPickup,
+    undefined,
+    "a rejected issue note records no proof",
+  );
+  // Verify that an issue note longer than 2000 trimmed characters is rejected.
+  assert.throws(() => attempt("x".repeat(2001)), /at least 5 characters/i);
+  // Verify that a 1998-character note padded with spaces is accepted and stored trimmed.
+  assert.equal(
+    attempt(`  ${"x".repeat(1998)}  `).loans
+      .find((l) => l.id === loan.id)!
+      .proofs.borrowerPickup.issueNote,
+    "x".repeat(1998),
+  );
+});

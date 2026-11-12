@@ -29,15 +29,17 @@ select pg_temp.ok(jsonb_array_length(public.demo_state()->'loans')=0,'state read
 select pg_temp.denied($q$select pg_temp.act('{"type":"cancel-loan","loanId":"sql-test-loan"}',4)$q$);
 reset role;
 -- Metadata fixtures exercise Storage RLS and command attachment checks without physical file upload.
-create function pg_temp.proof(stage text,rev integer) returns void language plpgsql as $$declare path text:=auth.uid()||'/proof/sql-test-loan/'||stage||'.jpg';code text;begin
-insert into storage.objects(bucket_id,name,owner_id,metadata) values('demo-images',path,auth.uid()::text,'{"mimetype":"image/jpeg","size":1}');
+create function pg_temp.proof(stage text,rev integer,note text default null) returns void language plpgsql as $$declare path text:=auth.uid()||'/proof/sql-test-loan/'||stage||'.jpg';code text;cmd jsonb;begin
+insert into storage.objects(bucket_id,name,owner_id,metadata) values('demo-images',path,auth.uid()::text,'{"mimetype":"image/jpeg","size":1}') on conflict do nothing;
 select 'CS4353:sql-test-loan:'||stage||':'||(data->>'code') into code from public.demo_loans where id='sql-test-loan';
+cmd:=jsonb_build_object('type','record-proof','loanId','sql-test-loan','step',stage,'code',code,'photo',path,'lockerNumber','12','assignmentVerified','true');
+if note is not null then cmd:=cmd||jsonb_build_object('issueNote',note); end if;
 begin
 execute 'select public.demo_command($1,$2,$3)' using jsonb_build_object('type','record-proof','loanId','sql-test-loan','step',stage,'code',code,'photo',path,'lockerNumber','12'),gen_random_uuid(),rev;
 exception when others then
 if position('locker scan' in sqlerrm)=0 then raise exception 'FAIL: expected the locker scan rejection, got %',sqlerrm; end if;
 end;
-perform pg_temp.act(jsonb_build_object('type','record-proof','loanId','sql-test-loan','step',stage,'code',code,'photo',path,'lockerNumber','12','assignmentVerified','true'),rev);
+perform pg_temp.act(cmd,rev);
 end$$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','50000000-0000-0000-0000-000000000001',true);
@@ -45,9 +47,22 @@ select pg_temp.proof('ownerDropoff',4);
 select pg_temp.denied($q$select pg_temp.act('{"type":"cancel-loan","loanId":"sql-test-loan"}',5)$q$);
 select set_config('request.jwt.claim.sub','50000000-0000-0000-0000-000000000002',true);
 select pg_temp.proof('borrowerPickup',5);
+select pg_temp.ok((select data->>'issueNote' is null from public.demo_proofs where loan_id='sql-test-loan' and step='borrowerPickup'),'proof without report stores no issue key');
 select pg_temp.proof('borrowerDropoff',6);
+select pg_temp.ok((select data->>'issueNote' is null from public.demo_proofs where loan_id='sql-test-loan' and step='borrowerDropoff'),'proof without report stores no issue key');
+-- A handover can carry an optional issue note, stored with the handover photo.
+set local role authenticated;
 select set_config('request.jwt.claim.sub','50000000-0000-0000-0000-000000000001',true);
-select pg_temp.proof('ownerPickup',7);
+insert into storage.objects(bucket_id,name,owner_id,metadata) values('demo-images','50000000-0000-0000-0000-000000000001/proof/sql-test-loan/ownerPickup.jpg','50000000-0000-0000-0000-000000000001','{"mimetype":"image/jpeg","size":1}') on conflict do nothing;
+select pg_temp.denied($q$select public.demo_command(jsonb_build_object('type','record-proof','loanId','sql-test-loan','step','ownerPickup','code','CS4353:sql-test-loan:ownerPickup:'||(select data->>'code' from public.demo_loans where id='sql-test-loan'),'photo','50000000-0000-0000-0000-000000000001/proof/sql-test-loan/ownerPickup.jpg','lockerNumber','12','assignmentVerified','true','issueNote','OK'),gen_random_uuid(),7)$q$,'Describe the issue');
+select pg_temp.ok((select count(*)=0 from public.demo_proofs where loan_id='sql-test-loan' and step='ownerPickup'),'a rejected issue note records no proof');
+select pg_temp.proof('ownerPickup',7,'One corner of the lens is scratched.');
+select pg_temp.ok((select data->>'issueNote'='One corner of the lens is scratched.' from public.demo_proofs where loan_id='sql-test-loan' and step='ownerPickup'),'issue note is stored with the handover photo');
+-- The notice is visible to its recipient only, so read it as the borrower.
+select set_config('request.jwt.claim.sub','50000000-0000-0000-0000-000000000002',true);
+select pg_temp.ok((select exists(select 1 from public.demo_notices where recipient='50000000-0000-0000-0000-000000000002' and position('reported an item issue' in data->>'text')>0)),'issue handover notifies the other participant');
+select pg_temp.ok((select exists(select 1 from jsonb_array_elements(public.demo_state()->'loans') l where l->>'id'='sql-test-loan' and l->'proofs'->'ownerPickup'->>'issueNote'='One corner of the lens is scratched.')),'issue note is exposed on the loan state');
+select set_config('request.jwt.claim.sub','50000000-0000-0000-0000-000000000001',true);
 select pg_temp.ok((select status='verifying' from public.demo_loans where id='sql-test-loan'),'future-dated handovers proceed immediately; final collection requires condition verification');
 select pg_temp.act('{"type":"verify-condition","loanId":"sql-test-loan","condition":"issue","note":"Missing cable"}',8);
 select pg_temp.ok((select status='verifying' from public.demo_loans where id='sql-test-loan'),'issue keeps verification open');

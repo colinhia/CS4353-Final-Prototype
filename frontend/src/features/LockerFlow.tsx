@@ -28,6 +28,9 @@ export function LockerFlow({
   );
   const [photo, setPhoto] = useState("");
   const [error, setError] = useState("");
+  // Optional issue report captured after the handover photo is taken.
+  const [reporting, setReporting] = useState(false);
+  const [issueNote, setIssueNote] = useState("");
   const pickup = step === "borrowerPickup" || step === "ownerPickup";
   const previous =
     loan &&
@@ -140,6 +143,35 @@ export function LockerFlow({
               reader.readAsDataURL(file);
             }}
           />
+          {photo && (
+            <button
+              disabled={saving || reporting}
+              className={`button ${reporting ? "accent" : "danger"}`}
+              type="button"
+              onClick={() => setReporting((value) => !value)}
+            >
+              {reporting ? "Cancel report" : "Report issue"}
+            </button>
+          )}
+          {reporting && (
+            // Capture the issue note that is saved with this handover photo.
+            <section className="issue-report">
+              <p>
+                You are reporting an issue with{" "}
+                <strong>{item.title ?? item.name}</strong>. Your note is saved
+                with this handover photo.
+              </p>
+              <label>
+                What is the issue?
+                <textarea
+                  value={issueNote}
+                  onChange={(e) => setIssueNote(e.target.value)}
+                  maxLength={2000}
+                  placeholder="e.g. The lid hinge is broken."
+                />
+              </label>
+            </section>
+          )}
           <ErrorText text={error} />
           <div className="form-actions">
             <button
@@ -153,7 +185,11 @@ export function LockerFlow({
             <button
               className="button primary"
               type="button"
-              disabled={saving || !photo}
+              disabled={
+                saving ||
+                !photo ||
+                (reporting && issueNote.trim().length < 5)
+              }
               onClick={async () => {
                 const result = await perform({
                   type: "record-proof",
@@ -163,13 +199,18 @@ export function LockerFlow({
                   code: expected,
                   lockerNumber,
                   assignmentVerified: true,
+                  ...(reporting && issueNote.trim()
+                    ? { issueNote: issueNote.trim() }
+                    : {}),
                 });
                 // Keep the handover form open when recording the proof fails.
                 if (!result.ok) setError(result.error);
                 else setPhase("success");
               }}
             >
-              Confirm {pickup ? "pickup" : "drop-off"}
+              {reporting
+                ? `Confirm ${pickup ? "pickup" : "drop-off"} · issue`
+                : `Confirm ${pickup ? "pickup" : "drop-off"}`}
             </button>
           </div>
         </>

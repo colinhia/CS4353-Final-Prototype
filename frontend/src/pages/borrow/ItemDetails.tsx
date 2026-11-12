@@ -28,7 +28,6 @@ export function ItemDetails({
   const ownerName = owner?.name ?? item.owner ?? "owner";
   const loans = (app?.store.loans ?? []).filter((l) => l.itemId === item.id)
   const me = app?.store.activeUserId
-  console.log("loans for this item", loans.filter(l => l.itemId === item.id), "me", me);
   
   const tvColour =
     app && owner ? spriteFor(app.store, owner.id).bodyColor : undefined;

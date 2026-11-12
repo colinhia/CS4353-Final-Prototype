@@ -1,4 +1,5 @@
 import type { Loan } from "./domain";
+import { useEffect, useState } from "react";
 
 const FREE_STATUSES = ["complete", "declined", "cancelled"];
 export const PENDING_STATUSES = ["requested", "arranging"];
@@ -44,4 +45,36 @@ export function shiftMonth(month: string, offset: number) {
   const d = new Date(month + "-01T12:00:00Z");
   d.setUTCMonth(d.getUTCMonth() + offset);
   return d.toISOString().slice(0, 7);
+}
+
+export function useItemBookings(itemId: string, refreshKey?: unknown) {
+  const [rows, setRows] = useState<Loan[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from("demo_item_bookings")
+      .select("id, item_id, starts_on, ends_on, status")
+      .eq("item_id", itemId)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setRows(
+          (data ?? []).map((r) => ({
+            id: r.id,
+            itemId: r.item_id,
+            start: r.starts_on,
+            end: r.ends_on,
+            status: r.status,
+            borrowerId: undefined, // unknown, so the calendar treats it as someone else's
+          })) as unknown as Loan[],
+        );
+      });
+    return () => { cancelled = true; };
+  }, [itemId, refreshKey]);
+  return rows;
+}
+
+/** Your own loans win when ids match, so they keep their "yours" colours. */
+export function mergeLoans(own: Loan[], bookings: Loan[]) {
+  const ids = new Set(own.map((l) => l.id));
+  return [...own, ...bookings.filter((b) => !ids.has(b.id))];
 }

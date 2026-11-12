@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useApp, uid } from "../app/context";
+import { useApp, uid, useOptionalApp } from "../app/context";
 import {
   addDays,
+  dateLabel,
   duration,
   LOCKERS,
   todayLocal,
@@ -22,7 +23,10 @@ export function LoanForm({
   onClose: () => void;
   onDone: (id: string) => void;
 }) {
+  const app = useOptionalApp();
   const { perform, toast, busy: saving } = useApp();
+  const loans = app?.store.loans.filter((l) => l.itemId === item.id);
+  const me = app?.store.activeUserId;
   const [newId] = useState(uid);
   const today = todayLocal();
   const [start, setStart] = useState(loan?.start ?? addDays(today, 1));
@@ -42,6 +46,7 @@ export function LoanForm({
         onSubmit={async (event) => {
           event.preventDefault();
           const id = loan?.id ?? newId;
+          if (!start || !end) { setError("Choose your receive and return dates."); return; }
           const result = await perform(
             loan
               ? { type: "edit-plan", loanId: id, start, end, lockerId }
@@ -67,27 +72,21 @@ export function LoanForm({
         <div className="two-fields">
           <label>
             Receive on
-            <input
-              type="date"
-              required
-              min={today}
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-            />
+            <button type="button" className="select-button" disabled={saving} onClick={() => setPicker("dates")}>
+              {start ? dateLabel(start) : "Select date"}
+              <Glyph name="calendar" size={16} />
+            </button>
           </label>
           <label>
             Return on
-            <input
-              type="date"
-              required
-              min={start || today}
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-            />
+            <button type="button" className="select-button" disabled={saving} onClick={() => setPicker("dates")}>
+              {end ? dateLabel(end) : "Select date"}
+              <Glyph name="calendar" size={16} />
+            </button>
           </label>
         </div>
 
-        <button
+        {/* <button
           disabled={saving}
           type="button"
           className="button subtle"
@@ -95,7 +94,7 @@ export function LoanForm({
         >
           <Glyph name="calendar" />
           Choose on calendar
-        </button>
+        </button> */}
 
         {start && end && end >= start && (
           <p className="muted">Duration: {duration(start, end)} days</p>
@@ -131,15 +130,10 @@ export function LoanForm({
       </form>
 
       {picker === "dates" && (
-        <DatePicker
-          start={start}
-          end={end}
+        <DatePicker start={start} end={end}
+          itemId={item.id} loans={loans} me={me} ignoreLoanId={loan?.id}
           onClose={() => setPicker(null)}
-          onDone={(s, e) => {
-            setStart(s);
-            setEnd(e);
-            setPicker(null);
-          }}
+          onDone={(s, e) => { setStart(s); setEnd(e); setPicker(null); }} 
         />
       )}
 

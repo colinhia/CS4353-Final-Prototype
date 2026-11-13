@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { validateImageFile } from "../../app/images";
 
 export function CameraCapture({
   onChange,
@@ -7,7 +6,6 @@ export function CameraCapture({
   onChange: (file: File | null) => void;
 }) {
   const video = useRef<HTMLVideoElement>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
   const [attempt, setAttempt] = useState(0);
   const [ready, setReady] = useState(false);
   const [photo, setPhoto] = useState("");
@@ -70,21 +68,6 @@ export function CameraCapture({
     onChange(new File([bytes], "locker-photo.jpg", { type: "image/jpeg" }));
     setPhoto(image);
   }
-  function chooseFile(file: File | null) {
-    if (!file) return;
-    // Accept picked photos only when they pass the shared image rules.
-    try {
-      validateImageFile(file);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Choose a valid image.");
-      return;
-    }
-    setError("");
-    onChange(file);
-    const reader = new FileReader();
-    reader.onload = () => setPhoto(String(reader.result));
-    reader.readAsDataURL(file);
-  }
   return (
     <div className="camera-capture">
       <p>Photo of item inside locker</p>
@@ -122,7 +105,6 @@ export function CameraCapture({
             onClick={() => {
               onChange(null);
               setPhoto("");
-              if (fileInput.current) fileInput.current.value = "";
             }}
           >
             Retake image
@@ -146,23 +128,6 @@ export function CameraCapture({
             Retry camera
           </button>
         )}
-        {/* Fallback for devices without a usable camera, such as presenter laptops. */}
-        <button
-          className="camera-button"
-          type="button"
-          onClick={() => fileInput.current?.click()}
-        >
-          {photo ? "Replace image" : "Choose a photo"}
-        </button>
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          hidden
-          onChange={(e) => {
-            chooseFile(e.target.files?.[0] ?? null);
-          }}
-        />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Command, Store } from "../app/domain";
+import type { Command, Store, Loan } from "../app/domain";
 import { tabAuthOptions } from "./auth.ts";
 export type Identity = { id: string; email: string };
 export interface DemoServices {
@@ -8,6 +8,7 @@ export interface DemoServices {
   signIn(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
   load(): Promise<Store>;
+  getItemBookings?(itemId: string): Promise<Loan[]>;
   execute(
     command: Command,
     requestId: string,
@@ -131,6 +132,15 @@ export function makeDemoServices(client: SupabaseClient): DemoServices {
     return pending;
   }
   return {
+    async getItemBookings(itemId: string) {
+      const { data, error } = await client.from('demo_item_bookings')
+        .select('id,item_id,starts_on,ends_on,status').eq('item_id', itemId);
+      if (error) throw error;
+      return (data ?? []).map(r => ({
+        id: r.id, itemId: r.item_id, start: r.starts_on, end: r.ends_on,
+        status: r.status, borrowerId: '',
+      })) as Loan[];
+    },
     configured: true,
     observe(listener) {
       const { data } = client.auth.onAuthStateChange((_event, session) =>

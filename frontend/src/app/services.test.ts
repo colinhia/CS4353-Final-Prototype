@@ -291,3 +291,23 @@ test("review edits retain stored photo paths rather than sending expiring signed
     "eric/public/original.jpg",
   );
 });
+
+test('booking lookup uses the provided frontend client and only requests public booking fields', async () => {
+  const calls: unknown[] = [];
+  const client = {
+    from(table: string) {
+      calls.push(table);
+      return { select(fields: string) {
+        calls.push(fields);
+        return { async eq(column: string, value: string) {
+          calls.push([column, value]);
+          return { data: [{id:'booking',item_id:'tent',starts_on:'2026-11-15',ends_on:'2026-11-17',status:'ready'}], error: null };
+        }};
+      }};
+    },
+  };
+  const rows = await makeDemoServices(client as unknown as SupabaseClient).getItemBookings!('tent');
+  assert.deepEqual(calls, ['demo_item_bookings','id,item_id,starts_on,ends_on,status',['item_id','tent']]);
+  assert.equal(rows[0].itemId,'tent');
+  assert.equal(rows[0].borrowerId,'');
+});

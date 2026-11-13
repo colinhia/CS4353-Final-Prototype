@@ -12,6 +12,7 @@ Object.assign(globalThis, {
   document: dom.window.document,
   HTMLElement: dom.window.HTMLElement,
   FileReader: dom.window.FileReader,
+  File: dom.window.File,
   IS_REACT_ACT_ENVIRONMENT: true,
 });
 dom.window.HTMLDialogElement.prototype.showModal = function () {
@@ -462,30 +463,37 @@ try {
     });
   // Verify that no issue can be reported before the handover photo exists.
   assert.equal(button("Report issue"), undefined, "no report option before a photo");
-  const photoInput = document.querySelector(
-    'input[type="file"][accept*="image"]',
-  );
-  // Verify that the photo fallback input is present when no camera is available.
-  assert.ok(photoInput, "photo step offers a file fallback");
-  await act(async () => {
-    Object.defineProperty(
-      photoInput,
-      "files",
-      {
-        value: [
-          new dom.window.File(["photo-bytes"], "item.jpg", {
-            type: "image/jpeg",
-          }),
-        ],
-      },
-    );
-    photoInput.dispatchEvent(
-      new dom.window.Event("change", { bubbles: true }),
-    );
-    // Let the picked file finish reading as a data URL.
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    await settle();
+  assert.equal(document.querySelector('input[type="file"]'), null,
+    "handover photos cannot be selected from files");
+  assert.equal(button("Choose a photo"), undefined);
+  const video = document.querySelector('video');
+  assert.ok(video, "photo step offers a live camera preview");
+  Object.defineProperties(video, {
+    videoWidth: { value: 640 },
+    videoHeight: { value: 480 },
   });
+  const canvasPrototype = dom.window.HTMLCanvasElement.prototype;
+  const originalContext = canvasPrototype.getContext;
+  const originalDataUrl = canvasPrototype.toDataURL;
+  canvasPrototype.getContext = () => ({ drawImage() {} });
+  canvasPrototype.toDataURL = () => "data:image/jpeg;base64,cGhvdG8tYnl0ZXM=";
+  try {
+    await act(async () => {
+      video.dispatchEvent(new dom.window.Event("canplay", { bubbles: true }));
+      await settle();
+    });
+    assert.equal(button("Capture image").disabled, false);
+    await act(async () => {
+      button("Capture image").click();
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await settle();
+    });
+    assert.ok(button("Retake image"));
+    assert.equal(button("Replace image"), undefined);
+  } finally {
+    canvasPrototype.getContext = originalContext;
+    canvasPrototype.toDataURL = originalDataUrl;
+  }
   // Verify that the report-issue option appears once the photo is taken.
   assert.ok(button("Report issue"), "report option appears after a photo");
   assert.equal(button("Confirm pickup").disabled, false);

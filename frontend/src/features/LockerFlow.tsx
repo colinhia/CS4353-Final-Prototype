@@ -141,16 +141,6 @@ export function LockerFlow({
               reader.readAsDataURL(file);
             }}
           />
-          {photo && (
-            <button
-              disabled={saving || reporting}
-              className={`button ${reporting ? "accent" : "danger"}`}
-              type="button"
-              onClick={() => setReporting((value) => !value)}
-            >
-              {reporting ? "Cancel report" : "Report issue"}
-            </button>
-          )}
           {reporting && (
             // Capture the issue note that is saved with this handover photo.
             <section className="issue-report">
@@ -171,7 +161,7 @@ export function LockerFlow({
             </section>
           )}
           <ErrorText text={error} />
-          <div className="form-actions">
+          <div className="form-actions" style={{ flexWrap: "nowrap" }}>
             <button
               disabled={saving}
               className="button"
@@ -180,6 +170,16 @@ export function LockerFlow({
             >
               Back
             </button>
+            {photo && (
+              <button
+                disabled={saving || reporting}
+                className={`button ${reporting ? "accent" : "danger"}`}
+                type="button"
+                onClick={() => setReporting((value) => !value)}
+              >
+                {reporting ? "Cancel report" : "Report issue"}
+              </button>
+            )}
             <button
               className="button primary"
               type="button"
